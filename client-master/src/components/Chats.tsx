@@ -12,10 +12,11 @@ import GroupUsersStore from '../stores/GroupUsersStore'
 import {ChatsUpdate} from '../interfaces/ChatsUpdate'
 import { UserInfo } from '../interfaces/UserInfo'
 import { MessagesUpdate } from '../interfaces/MessagesUpdate'
-import { AppBar, Avatar, IconButton, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Toolbar, Typography } from '@material-ui/core'
+import { AppBar, Avatar, IconButton, InputBase, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Toolbar, Typography } from '@material-ui/core'
 import DeleteIcon from '@material-ui/icons/Delete'
 import AddIcon  from '@material-ui/icons/Add'
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
+import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import SearchIcon from '@material-ui/icons/Search';
 
 var ChatId: string
 
@@ -26,6 +27,7 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
     const chat: string = 'Chat'
     const addChat: string = 'AddChat'
     const [item, setItem] = useState<string>(chats) // Отображаемый элемент
+    const [searchChat, setSearchChat] = useState<string>("")
     const useStyles = makeStyles((theme: Theme) => // стили
         createStyles({
             content: {
@@ -39,7 +41,7 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
                 height: '10%'
             },
             headerTitle: {
-                flexGrow: 1
+                marginLeft: theme.spacing(2)
             },
             headerButton: {
                 marginLeft: theme.spacing(2),
@@ -55,7 +57,41 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
             smallAvatar: {
                 width: theme.spacing(5),
                 height: theme.spacing(5)
-            }
+            },
+            search: {
+                flexGrow: 1,
+                position: 'relative',
+                borderRadius: theme.shape.borderRadius,
+                marginRight: theme.spacing(2),
+                marginLeft: 0,
+                width: '100%',
+                [theme.breakpoints.up('sm')]: {
+                  marginLeft: theme.spacing(3),
+                  width: 'auto',
+                },
+              },
+              searchIcon: {
+                padding: theme.spacing(0, 2),
+                height: '100%',
+                position: 'absolute',
+                pointerEvents: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+              inputRoot: {
+                color: 'inherit',
+              },
+              inputInput: {
+                padding: theme.spacing(1, 1, 1, 0),
+                // vertical padding + font size from searchIcon
+                paddingLeft: `calc(1em + ${theme.spacing(4)}px)`,
+                transition: theme.transitions.create('width'),
+                width: '100%',
+                [theme.breakpoints.up('md')]: {
+                  width: '20ch',
+                },
+              },
         })
     )
     const classes = useStyles() // классы стилей
@@ -163,6 +199,21 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
                                 >
                                     Chats
                                 </Typography>
+                                <div className={classes.search}>
+                                    <div className={classes.searchIcon}>
+                                        <SearchIcon />
+                                    </div>
+                                    <InputBase
+                                        placeholder="Search…"
+                                        classes={{
+                                            root: classes.inputRoot,
+                                            input: classes.inputInput,
+                                        }}
+                                        inputProps={{ 'aria-label': 'search' }}
+                                        value={searchChat}
+                                        onChange={event=>setSearchChat(event.target.value)}
+                                    />
+                                </div>
                                 <IconButton
                                     onClick={()=>setItem(addChat)}
                                     edge="start"
@@ -177,6 +228,9 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
                             className={classes.chats}
                         >
                             {chatsStore.chatsData.map((dialog: ChatsUpdate, index: number) =>{
+                                if(!dialog.title.includes(searchChat)) {
+                                    return;
+                                }
                                 var count: number = 0
                                 var newMessage: boolean = false
                                 messagesStore.messagesData.map((message: MessagesUpdate) =>{

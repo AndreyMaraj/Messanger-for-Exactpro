@@ -61,6 +61,7 @@ const ChangeProfileInfo = (props: {profileInfo: ProfileInfo, Done: ()=> void}) =
     // Загрузка файла
     function LoadPic(event: any): void {
         const reader: FileReader = new FileReader()
+        debugger
         reader.addEventListener("load", ()=>{ // обработка события чтения файла 
             var file: string | undefined = reader.result?.toString()
             if(file){
@@ -132,6 +133,7 @@ const ChangeProfileInfo = (props: {profileInfo: ProfileInfo, Done: ()=> void}) =
                 />
                 <Button
                     variant="outlined"
+                    component="label"
                     className={classes.setNewPhotoButton}
                 >
                     <input

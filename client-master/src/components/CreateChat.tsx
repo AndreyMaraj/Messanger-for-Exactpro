@@ -6,10 +6,11 @@ import UserAvatar from './UserAvatar'
 import OnlineStatusStore from '../stores/OnlineStatusStore'
 import ProfileStore from '../stores/ProfileStore'
 import { UserInfo } from '../interfaces/UserInfo'
-import { AppBar, Avatar, Button, Checkbox, Container, CssBaseline, FormControlLabel, Grid, IconButton, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Switch, TextField, Toolbar, Typography } from '@material-ui/core'
+import { AppBar, Avatar, Button, Checkbox, Container, CssBaseline, FormControlLabel, Grid, IconButton, InputBase, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Switch, TextField, Toolbar, Typography } from '@material-ui/core'
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
 import MessageIcon from '@material-ui/icons/Message'
 import DeleteIcon from '@material-ui/icons/Delete'
+import SearchIcon from '@material-ui/icons/Search';
 
 var userProfile: string = ''
 
@@ -26,8 +27,9 @@ const CreateChat = observer(({users, profileStore, onlineStatusStore, Done}: { u
   const [groupChatPicture, setGroupChatPicture] = useState<string>('') // Фото
   const [groupChatSmartType, setGroupChatSmartType] = useState<boolean>(false) // Тип
   const [groupChatUsers, setGroupChatUsers] = useState<boolean[]>(users.map(()=>{ return false })) // Пользователи
-  const smartChat = 'SmartChat' // умный чат
-  const simpleChat = 'SimpleChat' // простой чат
+  const [searchChat, setSearchChat] = useState<string>("")
+  const smartChat = '2' // умный чат
+  const simpleChat = '3' // простой чат
 
   const useStyles = makeStyles((theme: Theme) => // стили
     createStyles({
@@ -131,6 +133,40 @@ const CreateChat = observer(({users, profileStore, onlineStatusStore, Done}: { u
       },
       demo: {
         backgroundColor: theme.palette.background.paper
+      },
+      search: {
+        flexGrow: 1,
+        position: 'relative',
+        borderRadius: theme.shape.borderRadius,
+        marginRight: theme.spacing(2),
+        marginLeft: 0,
+        width: '100%',
+        [theme.breakpoints.up('sm')]: {
+          marginLeft: theme.spacing(3),
+          width: 'auto',
+        },
+      },
+      searchIcon: {
+        padding: theme.spacing(0, 2),
+        height: '100%',
+        position: 'absolute',
+        pointerEvents: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      inputRoot: {
+        color: 'inherit',
+      },
+      inputInput: {
+        padding: theme.spacing(1, 1, 1, 0),
+        // vertical padding + font size from searchIcon
+        paddingLeft: `calc(1em + ${theme.spacing(4)}px)`,
+        transition: theme.transitions.create('width'),
+        width: '100%',
+        [theme.breakpoints.up('md')]: {
+          width: '20ch',
+        },
       }
     })
   )
@@ -244,6 +280,21 @@ const CreateChat = observer(({users, profileStore, onlineStatusStore, Done}: { u
                     >
                       Cancel
                     </Button>
+                    <div className={classes.search}>
+                      <div className={classes.searchIcon}>
+                          <SearchIcon />
+                      </div>
+                      <InputBase
+                          placeholder="Search…"
+                          classes={{
+                              root: classes.inputRoot,
+                              input: classes.inputInput,
+                          }}
+                          inputProps={{ 'aria-label': 'search' }}
+                          value={searchChat}
+                          onChange={event=>setSearchChat(event.target.value)}
+                      />
+                  </div>
                   </Toolbar>
                 </AppBar>
                 <List 
@@ -259,31 +310,37 @@ const CreateChat = observer(({users, profileStore, onlineStatusStore, Done}: { u
                       New group
                     </Button>
                   </ListItem>
-                  {users.map((user: UserInfo, index: number) =>
-                    <ListItem 
-                      key={index}
-                    >
-                      <ListItemAvatar>
-                        <UserAvatar 
-                          user={{name: user.name, picture: user.picture}} 
-                          onlineStatusStore={onlineStatusStore}
-                          size={5}
+                  {users.map((user: UserInfo, index: number) => {
+                    if(!user.name.includes(searchChat)) {
+                      return null;
+                    }
+                    return (
+                      <ListItem 
+                        key={index}
+                      >
+                        <ListItemAvatar>
+                          <UserAvatar 
+                            user={{name: user.name, picture: user.picture}} 
+                            onlineStatusStore={onlineStatusStore}
+                            size={5}
+                          />
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={user.name}
+                          onClick={()=>{userProfile = user.name; setLastItem(createDirect); setItem(profile)}}
                         />
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={user.name}
-                        onClick={()=>{userProfile = user.name; setLastItem(createDirect); setItem(profile)}}
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton 
-                          edge="end" 
-                          aria-label="add"
-                          onClick={()=>CreatePrivateChat(user.name)}
-                        >
-                          <MessageIcon/>
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
+                        <ListItemSecondaryAction>
+                          <IconButton 
+                            edge="end" 
+                            aria-label="add"
+                            onClick={()=>CreatePrivateChat(user.name)}
+                          >
+                            <MessageIcon/>
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    );
+                  }
                   )}
                 </List>
               </div>

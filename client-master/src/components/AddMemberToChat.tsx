@@ -7,8 +7,9 @@ import ProfileStore from '../stores/ProfileStore'
 import { ChatsUpdate } from "../interfaces/ChatsUpdate"
 import { UserInfo } from '../interfaces/UserInfo'
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
-import { AppBar, Button, IconButton, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Toolbar } from '@material-ui/core'
+import { AppBar, Button, IconButton, InputBase, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Toolbar } from '@material-ui/core'
 import AddIcon  from '@material-ui/icons/Add'
+import SearchIcon from '@material-ui/icons/Search';
 
 var profile: string = ''
 
@@ -16,6 +17,7 @@ var profile: string = ''
 const AddMemberToChat = (props: {chatInfo: ChatsUpdate, users: UserInfo[], profileStore: ProfileStore, onlineStatusStore: OnlineStatusStore, Done: ()=> void}) => {
     
     const [item, setItem] = useState<string>('AddMember') // отображаемый элемент
+    const [searchChat, setSearchChat] = useState<string>("")
     const useStyles = makeStyles((theme: Theme) => // стили
         createStyles({
             content: {
@@ -108,6 +110,40 @@ const AddMemberToChat = (props: {chatInfo: ChatsUpdate, users: UserInfo[], profi
             },
             demo: {
                 backgroundColor: theme.palette.background.paper
+            },
+            search: {
+                flexGrow: 1,
+                position: 'relative',
+                borderRadius: theme.shape.borderRadius,
+                marginRight: theme.spacing(2),
+                marginLeft: 0,
+                width: '100%',
+                [theme.breakpoints.up('sm')]: {
+                  marginLeft: theme.spacing(3),
+                  width: 'auto',
+                },
+              },
+              searchIcon: {
+                padding: theme.spacing(0, 2),
+                height: '100%',
+                position: 'absolute',
+                pointerEvents: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+              inputRoot: {
+                color: 'inherit',
+              },
+              inputInput: {
+                padding: theme.spacing(1, 1, 1, 0),
+                // vertical padding + font size from searchIcon
+                paddingLeft: `calc(1em + ${theme.spacing(4)}px)`,
+                transition: theme.transitions.create('width'),
+                width: '100%',
+                [theme.breakpoints.up('md')]: {
+                  width: '20ch',
+                },
             }
         })
     )
@@ -170,38 +206,58 @@ const AddMemberToChat = (props: {chatInfo: ChatsUpdate, users: UserInfo[], profi
                                 >
                                     Cancel
                                 </Button>
+                                <div className={classes.search}>
+                                    <div className={classes.searchIcon}>
+                                        <SearchIcon />
+                                    </div>
+                                    <InputBase
+                                        placeholder="Search…"
+                                        classes={{
+                                            root: classes.inputRoot,
+                                            input: classes.inputInput,
+                                        }}
+                                        inputProps={{ 'aria-label': 'search' }}
+                                        value={searchChat}
+                                        onChange={event=>setSearchChat(event.target.value)}
+                                    />
+                                </div>
                             </Toolbar>
                         </AppBar>
                         <List 
                             dense={true}
                             className={classes.addMember}
                         >
-                            {props.users.map((user: UserInfo, index: number) =>
-                                <ListItem 
-                                    key={index}
-                                >
-                                    <ListItemAvatar>
-                                        <UserAvatar 
-                                            user={{name: user.name, picture: user.picture}} 
-                                            onlineStatusStore={props.onlineStatusStore}
-                                            size={5}
-                                        />
-                                    </ListItemAvatar>
-                                        <ListItemText
-                                            primary={user.name}
-                                            onClick={()=>{profile = user.name; setItem('Profile')}}
-                                        />
-                                    <ListItemSecondaryAction>
-                                        <IconButton 
-                                            edge="end" 
-                                            aria-label="add"
-                                            onClick={()=>AddMember(user)}
-                                        >
-                                            <AddIcon/>
-                                        </IconButton>
-                                    </ListItemSecondaryAction>
-                                </ListItem>
-                            )}
+                            {props.users.map((user: UserInfo, index: number) => {
+                                if (!user.name.includes(searchChat)) {
+                                    return null;
+                                }
+                                return (
+                                    <ListItem 
+                                        key={index}
+                                    >
+                                        <ListItemAvatar>
+                                            <UserAvatar 
+                                                user={{name: user.name, picture: user.picture}} 
+                                                onlineStatusStore={props.onlineStatusStore}
+                                                size={5}
+                                            />
+                                        </ListItemAvatar>
+                                            <ListItemText
+                                                primary={user.name}
+                                                onClick={()=>{profile = user.name; setItem('Profile')}}
+                                            />
+                                        <ListItemSecondaryAction>
+                                            <IconButton 
+                                                edge="end" 
+                                                aria-label="add"
+                                                onClick={()=>AddMember(user)}
+                                            >
+                                                <AddIcon/>
+                                            </IconButton>
+                                        </ListItemSecondaryAction>
+                                    </ListItem>
+                                );
+                            })}
                         </List>
                     </div>
                 )

@@ -1,7 +1,6 @@
 // Работка с файлами 
 export default class Files{
 
-    
     public static LoadFiles(event: any): void{
         const reader: FileReader = new FileReader()
         reader.addEventListener("load", ()=>{

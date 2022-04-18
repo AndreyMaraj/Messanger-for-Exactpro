@@ -8,7 +8,6 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined'
 // Форма авторизации (вход/регистрация)
 const Authorization = (props: { LogIn: () => void }) => {
 
-  const [addres, setAddres] = useState<string>("") // Введеный адрес 
   const [username, setUsername] = useState<string>("") // Введеный ник
   const [password, setPassword] = useState<string>("") // Введенный пароль
   const crypt = require('crypto') // Функция хэширования пароля
@@ -37,19 +36,11 @@ const Authorization = (props: { LogIn: () => void }) => {
 
   // Валидация формы
   function FormSubmit(): boolean {
-    if(addres === "" || username === "" || password === "") {
-      alert("Not all fields of the form are filled in.")
-      return false
+    if(username === "" || password === "") {
+      alert("Not all fields of the form are filled in.");
+      return false;
     }
-    else{
-      if(addres === '127.0.0.1:8081' || addres === 'localhost:8081'){
-        return true
-      }
-      else{
-        alert("Wrong addres.")
-        return false
-      }
-    }
+    return true;
   }
 
   // Успешная авторизация
@@ -136,20 +127,6 @@ const Authorization = (props: { LogIn: () => void }) => {
             className={classes.form}
             noValidate
           >
-            <TextField
-              variant="outlined"
-              margin="normal"
-              required
-              fullWidth
-              autoFocus
-              name="addres"
-              label="Addres"
-              type="addres"
-              id="addres"
-              autoComplete="off"
-              value={addres}
-              onChange={event=>setAddres(event.target.value)} 
-            />
             <TextField
               variant="outlined"
               margin="normal"
