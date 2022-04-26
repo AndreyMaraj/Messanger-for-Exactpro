@@ -23,11 +23,11 @@ public class Users {
      * Отправляет массив всех зарегистрированных юзеров
      */
     public void getAllUsersInfo(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
+        String sessionKey = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
             JsonArray usersArray = new JsonArray();
             ArrayList<String> allUserNames = DATABASE.getAllUserNames();
-            allUserNames.remove(DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME));
+            allUserNames.remove(DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME));
             allUserNames.forEach(user -> usersArray.add(getUserInfoAsJson(user)));
             ctx.result(usersArray.toString());
             ctx.status(HttpStatus.OK_200);
@@ -38,10 +38,10 @@ public class Users {
      * Отправляет массив юзеров, которых можно добавить в чат
      */
     public void getUsersInfoToAddInChat(@NotNull Context ctx) {
-        if (SseConnectionsManager.checkValidSessionKey(ctx.queryParam(KEY), ctx)) {
+        if (SseConnectionsManager.checkValidSessionKey(ctx.queryParam(SESSION), ctx)) {
             String chatId = ctx.queryParam(CHAT_ID);
             ArrayList<String> allUserNames = DATABASE.getAllUserNames();
-            String usersAlreadyInChat = DATABASE.getValueFromString(chatId, USERS);
+            String usersAlreadyInChat = DATABASE.getValueFromTable(chatId, USER);
             JsonArray usersInfoToAddInChat = new JsonArray();
             for (String user : allUserNames) {
                 if (!usersAlreadyInChat.contains(user)) {
@@ -54,9 +54,9 @@ public class Users {
     }
 
     public void openProfile(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
+        String sessionKey = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
-            String name = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
+            String name = DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME);
             if (SseConnectionsManager.getSseClientsNames().containsKey(name)) {
                 String user = Objects.equals(ctx.queryParam(NAME), "") ? name : ctx.queryParam(NAME);
                 SseConnectionsManager.sendEvent(name, SseEvents.USER_INFO, getUserInfoAsJson(user).toString());
@@ -69,12 +69,12 @@ public class Users {
     }
 
     public void setUserInfo(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
+        String sessionKey = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
             JsonObject requestBody = new Gson().fromJson(ctx.body(), JsonObject.class);
             JsonObject userInfo = new JsonObject();
-            String userName = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
-            String newUserName = DATABASE.checkDataExistsInTable(USERS, NAME, requestBody.get(NAME).getAsString()) ? userName : requestBody.get(NAME).getAsString();
+            String userName = DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME);
+            String newUserName = DATABASE.checkDataExistsInTable(USER, NAME, requestBody.get(NAME).getAsString()) ? userName : requestBody.get(NAME).getAsString();
             String bio = requestBody.get(BIO).getAsString();
             String userPicture = requestBody.get(PICTURE).toString().equals("null") ? "" : requestBody.get(PICTURE).getAsString();
             if (!userName.equals(newUserName)) {
@@ -92,11 +92,11 @@ public class Users {
     }
 
     public void updateUserNameInChats(String oldName, String newName) {
-        String chats = DATABASE.getValueFromString(oldName, CHAT_LIST);
+        String chats = DATABASE.getValueFromTable(oldName, CHAT_LIST);
         if (chats != null) {
             Arrays.stream(chats.split(",")).forEach(chatId -> {
-                DATABASE.deleteItemFromList(chatId, USERS, oldName, FLAG, "1");
-                DATABASE.addItemIntoList(chatId, USERS, newName, FLAG, "1");
+                DATABASE.deleteItemFromList(chatId, USER, oldName, FLAG, "1");
+                DATABASE.addItemIntoList(chatId, USER, newName, FLAG, "1");
                 if (ChatManager.getUserRoleInChat(chatId, oldName).equals(ADMIN)) {
                     DATABASE.deleteItemFromList(chatId, ADMINS, oldName, FLAG, "1");
                     DATABASE.addItemIntoList(chatId, ADMINS, newName, FLAG, "1");
@@ -113,9 +113,9 @@ public class Users {
     public JsonObject getUserInfoAsJson(String userName) {
         JsonObject userInfo = new JsonObject();
         userInfo.addProperty(NAME, userName);
-        userInfo.addProperty(BIO, DATABASE.getValueFromString(userName, BIO));
-        userInfo.addProperty(TIME, DATABASE.getValueFromString(userName, TIME_STAMP));
-        userInfo.addProperty(PICTURE, DATABASE.getValueFromString(userName, PICTURE));
+        userInfo.addProperty(BIO, DATABASE.getValueFromTable(userName, BIO));
+        userInfo.addProperty(TIME, DATABASE.getValueFromTable(userName, TIMESTAMP));
+        userInfo.addProperty(PICTURE, DATABASE.getValueFromTable(userName, PICTURE));
         return userInfo;
     }
 
@@ -125,7 +125,7 @@ public class Users {
     public static JsonObject getUserLastTimeStampAsJson(String user) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty(NAME, user);
-        jsonObject.addProperty(TIME, DATABASE.getValueFromString(user, TIME_STAMP));
+        jsonObject.addProperty(TIME, DATABASE.getValueFromTable(user, TIMESTAMP));
         return jsonObject;
     }
 
@@ -134,13 +134,13 @@ public class Users {
         updateUserNameInChats(oldUserName, newUserName);
         DATABASE.updateValueInTable(oldUserName, NAME, newUserName, FLAG, "1");
         DATABASE.renameTable(oldUserName, newUserName);
-        DATABASE.updateValueInTable(USERS, NAME, newUserName, NAME, oldUserName);
+        DATABASE.updateValueInTable(USER, NAME, newUserName, NAME, oldUserName);
         DATABASE.renameTable(oldUserName + "_" + LAST_READ_ID, newUserName + "_" + LAST_READ_ID);
         changeUserNameInMessageStorage(newUserName, oldUserName);
     }
 
     private void changeUserNameInMessageStorage(String newName, String oldName){
-        String allUserChats = DATABASE.getValueFromString(newName, CHAT_LIST);
+        String allUserChats = DATABASE.getValueFromTable(newName, CHAT_LIST);
         if(allUserChats != null) {
             String[] allUserChatsArray = allUserChats.split(",");
             for (int i = 0; i < allUserChatsArray.length; i++) {
@@ -160,11 +160,11 @@ public class Users {
     }
 
     private void sendUserInfoToChats(String userName) {
-        String usersChats = DATABASE.getValueFromString(userName, CHAT_LIST);
+        String usersChats = DATABASE.getValueFromTable(userName, CHAT_LIST);
         if (usersChats != null && !usersChats.equals("")) {
             Arrays.stream(usersChats.split(",")).forEach(chat -> {
                 if (!chatManager.getChatType(chat).equals(PRIVATE_CHAT)) {
-                    String users = DATABASE.getValueFromString(chat, USERS);
+                    String users = DATABASE.getValueFromTable(chat, USER);
                     Arrays.stream(users.split(",")).forEach(user -> SseConnectionsManager.sendEvent(user, SseEvents.USER_IN_CHAT, chatManager.getChatMemberInfoAsJson(chat, userName).toString()));
                 } else {
                     chatManager.sendDataOfChatForUsersInChat(chat, SseEvents.UPDATE);

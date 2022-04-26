@@ -33,11 +33,11 @@ public class Server {
 
         APP.get("open-chat", chatManager::openChat);
 
-        APP.get("login", sseConnectionsManager::login); //
+        APP.get("login", sseConnectionsManager::login);
 
-        APP.post("registration", sseConnectionsManager::registerUser); //
+        APP.post("registration", sseConnectionsManager::registerUser);
 
-        APP.post("set-user-info", users::setUserInfo); //
+        APP.post("set-user-info", users::setUserInfo);
 
         APP.get("get-user-info", users::openProfile);
 
@@ -73,8 +73,26 @@ public class Server {
 
         APP.post("disconnect-client", sseConnectionsManager::disconnectClient);
 
-        APP.put("alive", sseConnectionsManager::setClientOnlineStatus); //
+        APP.put("alive", sseConnectionsManager::setClientOnlineStatus);
 
         APP.sse("sse", sseConnectionsManager::setSseConnection);
+
+        APP.post("archive", chatStorage::archiveChat);
+
+        APP.post("pinChat", chatStorage::pinChat);
+
+        APP.post("createChatFolder", chatStorage::createChatFolder);
+
+        APP.post("deleteChatFolder", chatStorage::deleteChatFolder);
+
+        APP.get("getChatFolders", chatStorage::getChatFolders);
+
+        APP.post("putChatInFolder", chatStorage::putChatInFolder);
+
+        APP.post("removeChatFromFolder", chatStorage::removeChatFromFolder);
+
+        APP.post("renameChatFolder", chatStorage::renameChatFolder);
+
+        APP.post("likeMessage", chatStorage::likeMessage);
     }
 }
