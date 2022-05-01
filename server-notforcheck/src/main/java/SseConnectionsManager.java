@@ -22,34 +22,30 @@ public class SseConnectionsManager {
     }
 
     public void login(@NotNull Context ctx) {
-        String userName = ctx.queryParam(USERNAME);
+        String login = ctx.queryParam(USERNAME);
         String password = ctx.queryParam(PASSWORD);
-        if (DATABASE.checkDataExistsInTable(USERS, NAME, userName) && DATABASE.getValueFromString(USERS, NAME, userName, PASSWORD).equals(password)) {
-            System.out.println("login");
-            String sessionKey = Server.getIdString();
-            DATABASE.updateValueInTable(USERS, KEY, sessionKey, NAME, userName);
+        if (DATABASE.checkDataExistsInTable(USER, LOGIN, login) && DATABASE.getValueFromTable(USER, LOGIN, login, PASSWORD).equals(password)) {
+            String session = Server.getIdString();
+            DATABASE.updateValueInTable(USER, SESSION, session, LOGIN, login);
             ctx.status(HttpStatus.OK_200);
-            ctx.result(getStringAsJson(KEY, sessionKey).toString());
+            ctx.result(getStringAsJson(SESSION, session).toString());
         } else {
             ctx.status(HttpStatus.UNAUTHORIZED_401);
-            System.out.println("name = " + userName + " pass = " + password + " -> такого пользователя нет в базе данных");
+            System.out.println("name = " + login + " pass = " + password + " -> такого пользователя нет в базе данных");
         }
     }
 
     public void registerUser(@NotNull Context ctx) {
-        System.out.println("registration");
         JsonObject requestBody = new Gson().fromJson(ctx.body(), JsonObject.class);
         String name = requestBody.get(NAME).getAsString();
         String password = requestBody.get(PASSWORD).getAsString();
-        if (Arrays.asList(WRONG_NAMES).contains(name) || name.equals("") || DATABASE.checkDataExistsInTable(USERS, NAME, name)) {
+        if (Arrays.asList(WRONG_NAMES).contains(name) || name.equals("") || DATABASE.checkDataExistsInTable(USER, NAME, name)) {
             System.out.println("ERROR: registration: Такое имя " + name + " уже есть в БД");
             ctx.status(HttpStatus.NOT_ACCEPTABLE_406);
         } else {
-            String sessionKey = Server.getIdString();
-            String userId = Server.getIdString();
-            DATABASE.addIntoUsersTable(userId, name, password, sessionKey);
-            DATABASE.createUserTable(Server.getIdString(), name, "", "");
-            ctx.result(getStringAsJson(KEY, sessionKey).toString());
+            String session = Server.getIdString();
+            DATABASE.registerUser(name, password, session);
+            ctx.result(getStringAsJson(SESSION, session).toString());
             ctx.status(HttpStatus.OK_200);
         }
     }
@@ -58,16 +54,16 @@ public class SseConnectionsManager {
      * Отключение ссе клиента
      */
     public void disconnectClient(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
-        if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
-            String username = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
+        String session = ctx.queryParam(SESSION);
+        if (SseConnectionsManager.checkValidSessionKey(session, ctx)) {
+            String username = DATABASE.getValueFromTable(USER, SESSION, session, LOGIN);
             if (getSseClientsNames().containsKey(username)) {
                 ctx.status(HttpStatus.OK_200);
                 getSseClientsNames().remove(username);
                 System.out.println("Юзер " + username + " успешно отключен");
             } else {
                 ctx.status(HttpStatus.UNAUTHORIZED_401);
-                System.out.println("disconnect-client: Не удалось отключить пользователя: clientsInfo не содержит " + sessionKey);
+                System.out.println("disconnect-client: Не удалось отключить пользователя: clientsInfo не содержит " + session);
             }
         }
     }
@@ -76,15 +72,15 @@ public class SseConnectionsManager {
      * Устанавливает новый timeStamp клиенту
      */
     public void setClientOnlineStatus(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
-        if (checkValidSessionKey(sessionKey, ctx)) {
+        String session = ctx.queryParam(SESSION);
+        if (checkValidSessionKey(session, ctx)) {
             String timeStamp = java.time.LocalDateTime.now().toString();
-            String name = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
-            System.out.println(name + " is online");
-            DATABASE.updateValueInTable(name, TIME_STAMP, timeStamp, FLAG, "1");
+            String login = DATABASE.getValueFromTable(USER, SESSION, session, LOGIN);
+            System.out.println(login + " is online");
+            DATABASE.updateValueInTable(USER, TIMESTAMP, timeStamp, LOGIN, login);
             ArrayList<String> allUsers = DATABASE.getAllUserNames();
             JsonObject userOnlineStatus = new JsonObject();
-            userOnlineStatus.addProperty(NAME, name);
+            userOnlineStatus.addProperty(NAME, login);
             userOnlineStatus.addProperty(TIME, timeStamp);
             if (allUsers != null) {
                 for (String user : allUsers) {
@@ -103,12 +99,10 @@ public class SseConnectionsManager {
     public static void sendEvent(String sseClientsNames, String event, String eventData) {
         if (sseClientsNames != null) {
             Arrays.stream(sseClientsNames.split(",")).forEach(client -> {
-                //System.out.println("SSE client = " + client);
                 if (!client.equals("") && getSseClientsNames().containsKey(client)) {
-                    //System.out.println("send event to " + sseClientsNames);
                     getSseClientsNames().get(client).sendEvent(event, eventData);
                 }else{
-                    //System.out.println("Sse client " + client + " is null");
+                    System.out.println("Sse client " + client + " is null");
                 }
             });
         }
@@ -116,26 +110,26 @@ public class SseConnectionsManager {
 
     public void setSseConnection(SseClient client) {
         System.out.println("SSE");
-        String sessionKey = client.ctx.queryParam(KEY);
-        if (sessionKey != null && DATABASE.checkDataExistsInTable(USERS, KEY, sessionKey)) {
-            String user = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
+        String session = client.ctx.queryParam(SESSION);
+        if (session != null && DATABASE.checkDataExistsInTable(USER, SESSION, session)) {
+            String user = DATABASE.getValueFromTable(USER, SESSION, session, LOGIN);
             System.out.println("sse " + user);
             getSseClientsNames().put(user, client);
             client.onClose(() -> {
                 getSseClientsNames().remove(user, client);
                 System.out.println("sse: client disconnected");
             });
-            String chatsFromDataBase = DATABASE.getValueFromString(user, CHAT_LIST);
+            String chatsFromDataBase = DATABASE.getValueFromTable(user, CHAT_LIST);
             if (chatsFromDataBase != null && !chatsFromDataBase.equals("")) {
                 Arrays.stream(chatsFromDataBase.split(",")).forEach(chatId -> {
                     sendEvent(user, SseEvents.UPDATE, chatManager.getChatInfoAsJson(chatId, user).toString());
-                    MessageManager.sendMessageHistory(chatId, sessionKey);
+                    MessageManager.sendMessageHistory(chatId, session);
                 });
             }
             client.ctx.status(HttpStatus.OK_200);
         } else {
             client.ctx.status(HttpStatus.UNAUTHORIZED_401);
-            System.out.println("ERROR: sse: Пользователь с ключем " + sessionKey + " не авторизован");
+            System.out.println("ERROR: sse: Пользователь с ключем " + session + " не авторизован");
         }
     }
 
@@ -154,7 +148,7 @@ public class SseConnectionsManager {
     }
 
     public static boolean checkValidSessionKey(String key, @NotNull Context ctx) {
-        if (key != null && DATABASE.checkDataExistsInTable(USERS, KEY, key)) {
+        if (key != null && DATABASE.checkDataExistsInTable(USER, SESSION, key)) {
             return true;
         } else {
             ctx.status(HttpStatus.UNAUTHORIZED_401);

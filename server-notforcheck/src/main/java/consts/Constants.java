@@ -3,12 +3,14 @@ package consts;
 public class Constants {
     public static final String ADMINS = "admins";
     public static final String ADMIN = "admin";
+    public static final String ARCHIVED = "archived";
     //B
     public static final String BIO = "bio";
     public static final String BYTES = "bytes";
     //C
     public static final String CHAT_LIST = "chat_list";
     public static final String CHAT_ID = "chatId";
+    public static final String CHAT = "chat";
     public static final String CHAT_NAME = "chatName";
     //D
     public static final String DATE = "date";
@@ -19,15 +21,17 @@ public class Constants {
     public static final String FILES = "files";
     public static final String FILES_ = "files_";
     public static final String FALSE = "false";
+    public static final String FOLDER = "folder";
     //G
     //H
     //I
     public static final String ID = "id";
     //J
     //K
-    public static final String KEY = "key";
     //L
     public static final String LINKS = "links";
+    public static final String LIKE = "like";
+    public static final String LOGIN = "login";
     public static final String LAST_READ_ID = "lastReadIdMessage";
     //M
     public static final String MESSAGE = "message";
@@ -40,6 +44,7 @@ public class Constants {
     public static final String OWNER = "owner";
     //P
     public static final String PICTURE = "picture";
+    public static final String PINNED = "pinned";
     public static final String PASSWORD = "password";
     public static final String PRIVATE_CHAT = "1";
     //Q
@@ -48,6 +53,7 @@ public class Constants {
     public static final String READ = "read";
     //S
     public static final String SENDER = "sender";
+    public static final String SESSION = "session";
     public static final String SENDER_ROLE = "senderRole";
     public static final String SENDER_PICTURE = "senderPicture";
     public static final String SENT = "sent";
@@ -55,15 +61,16 @@ public class Constants {
     public static final String SIMPLE_CHAT = "3";
     //T
     public static final String TIME = "time";
-    public static final String TIME_STAMP = "time_stamp";
+    public static final String TIMESTAMP = "timestamp";
     public static final String TYPE = "type";
     public static final String TITLE = "title";
     public static final String TEXT = "text";
     public static final String TRUE = "true";
     //U
-    public static final String USERS = "users";
     public static final String USER = "user";
     public static final String USERNAME = "username";
+    public static final String USER_CHAT = "user_chat";
+    public static final String USER_MESSAGE = "user_message";
     //V
     //W
     public static final String[] WRONG_NAMES = {"", " ", ".", ";", ":", "/", "'", "*"};

@@ -20,16 +20,16 @@ public class ChatManager {
      * Создание группового чата...
      */
     public void createGroupChat(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
+        String sessionKey = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
             JsonObject requestBody = new Gson().fromJson(ctx.body(), JsonObject.class);
             // проверка содержания необходимых параметров в запросе на создание чата
-            if (requestBody.has(CHAT_NAME) && requestBody.has(USERS) && requestBody.has(TYPE)) {
+            if (requestBody.has(CHAT_NAME) && requestBody.has(USER) && requestBody.has(TYPE)) {
                 String chatName = requestBody.get(CHAT_NAME).getAsString();
                 String chatType = requestBody.get(TYPE).getAsString();
                 System.out.println("CHAT TYPE FROM CLIENT = " + chatType);
                 String chatId = Server.getIdString();
-                String ownerName = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
+                String ownerName = DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME);
 
                 DATABASE.createChat(chatId, chatName, chatType, ownerName);
                 if (requestBody.has(BIO)) {
@@ -39,7 +39,7 @@ public class ChatManager {
                     System.out.println("ADD PICTURE");
                     addChatPicture(chatId, requestBody.get(PICTURE).getAsString());
                 }
-                JsonArray usersInChat = requestBody.get(USERS).getAsJsonArray();
+                JsonArray usersInChat = requestBody.get(USER).getAsJsonArray();
                 usersInChat.add(ownerName);
                 addUsersInChat(chatId, usersInChat);
                 sendDataOfChatForUsersInChat(chatId, SseEvents.UPDATE);
@@ -76,10 +76,10 @@ public class ChatManager {
      * Создание личного чата
      */
     public void createPrivateChat(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
+        String sessionKey = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
             JsonObject requestBody = new Gson().fromJson(ctx.body(), JsonObject.class);
-            String creatorName = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
+            String creatorName = DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME);
             String userName = requestBody.get(USER).getAsString();
             if (!isPrivateChatAlreadyExists(creatorName, userName, ctx)) {
                 String chatId = Server.getIdString();
@@ -100,14 +100,14 @@ public class ChatManager {
      * Определяет тип чата из которого выходит юзер и перенаправляет на нужный метод
      */
     public void exitFromChat(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
+        String sessionKey = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
             System.out.println("exitFromChat");
             JsonObject requestBody = new Gson().fromJson(ctx.body(), JsonObject.class);
             String chatId = requestBody.get(CHAT_ID).getAsString();
             String type = getChatType(chatId);
             String usersInChat = getUsersInChat(chatId);
-            String userForDelete = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
+            String userForDelete = DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME);
 
             if (type.equals(PRIVATE_CHAT)) {
                 exitFromPrivateChat(chatId, usersInChat);
@@ -124,12 +124,12 @@ public class ChatManager {
      * При открытии чата отсылается информация о юзерах в чате
      */
     public void openChat(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
+        String sessionKey = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
             System.out.println("+++++++++++++++++++++++++++++++++++ OPEN CHAT +++++++++++++++++++++++++++++++");
             String chatId = ctx.queryParam(CHAT_ID);
             String usersInChat = getUsersInChat(chatId);
-            String openerName = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
+            String openerName = DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME);
             Arrays.stream(usersInChat.split(",")).forEach(user -> {
                 if (!user.equals(openerName)) {
                     String userInfo = getChatMemberInfoAsJson(chatId, user).toString();
@@ -145,11 +145,11 @@ public class ChatManager {
      * Iзменение картинки, био и названия чата
      */
     public void changeChatSettings(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
+        String sessionKey = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
             JsonObject requestBody = new Gson().fromJson(ctx.body(), JsonObject.class);
             String chatId = requestBody.get(CHAT_ID).getAsString();
-            String userName = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
+            String userName = DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME);
             if (isUserRightsEnough(chatId, userName)) {
                 String bio = requestBody.get(BIO).getAsString();
                 String chatName = requestBody.get(CHAT_NAME).getAsString();
@@ -183,17 +183,17 @@ public class ChatManager {
      * Удаление юзера из чата
      */
     public void deleteUserFromChat(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
-        if (SseConnectionsManager.checkValidSessionKey(ctx.queryParam(KEY), ctx)) {
+        String sessionKey = ctx.queryParam(SESSION);
+        if (SseConnectionsManager.checkValidSessionKey(ctx.queryParam(SESSION), ctx)) {
             JsonObject requestBody = new Gson().fromJson(ctx.body(), JsonObject.class);
             String chatId = requestBody.get(CHAT_ID).getAsString();
             String user = requestBody.get(USER).getAsString();
-            if (isUserRightsEnough(chatId, DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME))) {
+            if (isUserRightsEnough(chatId, DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME))) {
                 DATABASE.deleteUserFromChat(chatId, user);
                 String usersInChat = getUsersInChat(chatId);
                 SseConnectionsManager.sendEvent(user, SseEvents.CHAT_IS_DELETED, getChatIdAsJson(chatId).toString());
                 SseConnectionsManager.sendEvent(usersInChat, SseEvents.USER_IS_DELETED, getChatMemberInfoAsJson(chatId, user).toString());
-                DATABASE.deleteStringFromTable(user + "_" + LAST_READ_ID, CHAT_ID, chatId);
+                DATABASE.deleteFromTable(user + "_" + LAST_READ_ID, CHAT_ID, chatId);
                 ctx.status(HttpStatus.OK_200);
             } else {
                 ctx.status(HttpStatus.FORBIDDEN_403);
@@ -209,12 +209,12 @@ public class ChatManager {
      * Передаваемый юзер становится админом группы
      */
     public void addAdminInChat(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
+        String sessionKey = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
             System.out.println("ADD ADMIN");
             JsonObject requestBody = new Gson().fromJson(ctx.body(), JsonObject.class);
             String chatId = requestBody.get(CHAT_ID).getAsString();
-            if (isUserRightsEnough(chatId, DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME))) {
+            if (isUserRightsEnough(chatId, DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME))) {
                 String user = requestBody.get(USER).getAsString();
                 DATABASE.addItemIntoList(chatId, ADMINS, user, FLAG, "1");
                 sendDataOfChatForUsersInChat(chatId, SseEvents.UPDATE);
@@ -244,11 +244,11 @@ public class ChatManager {
      * Передаваемый юзер удаляется из админов группы
      */
     public void deleteAdminFromChat(@NotNull Context ctx) {
-        String key = ctx.queryParam(KEY);
+        String key = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(key, ctx)) {
             JsonObject requestBody = new Gson().fromJson(ctx.body(), JsonObject.class);
             String chatId = requestBody.get(CHAT_ID).getAsString();
-            if (isUserRightsEnough(chatId, DATABASE.getValueFromString(USERS, KEY, key, NAME))) {
+            if (isUserRightsEnough(chatId, DATABASE.getValueFromTable(USER, SESSION, key, NAME))) {
                 System.out.println("DELETE ADMIN");
                 String user = requestBody.get(USER).getAsString();
                 DATABASE.deleteItemFromList(chatId, ADMINS, user, FLAG, "1");
@@ -266,13 +266,13 @@ public class ChatManager {
      * Добавление юзера в групповой чат
      */
     public void addUserInChat(@NotNull Context ctx) {
-        String sessionKey = ctx.queryParam(KEY);
+        String sessionKey = ctx.queryParam(SESSION);
         if (SseConnectionsManager.checkValidSessionKey(sessionKey, ctx)) {
             System.out.println("ADD USER IN CHAT");
             JsonObject requestBody = new Gson().fromJson(ctx.body(), JsonObject.class);
             String user = requestBody.get(USER).getAsString();
             String chatId = requestBody.get(CHAT_ID).getAsString();
-            if (isUserRightsEnough(chatId, DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME))) {
+            if (isUserRightsEnough(chatId, DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME))) {
                 String usersInChat = getUsersInChat(chatId);
                 if (!usersInChat.contains(user)) {
                     DATABASE.addUserInChat(chatId, user);
@@ -288,7 +288,7 @@ public class ChatManager {
     }
 
     public String getChatType(String chatId) {
-        return DATABASE.getValueFromString(chatId, TYPE);
+        return DATABASE.getValueFromTable(chatId, TYPE);
     }
 
     private void sendUserInfoInChat(String chatId, String user) {
@@ -312,11 +312,11 @@ public class ChatManager {
         String chatType = getChatType(chatId);
         if(chatType!=null){
             if (chatType.equals(PRIVATE_CHAT)) {
-                String openerName = DATABASE.getValueFromString(USERS, KEY, sessionKey, NAME);
+                String openerName = DATABASE.getValueFromTable(USER, SESSION, sessionKey, NAME);
                 String companionName = getUsersInChat(chatId).replace(openerName, "").replace(",", "");
-                return DATABASE.getValueFromString(companionName, PICTURE);
+                return DATABASE.getValueFromTable(companionName, PICTURE);
             } else {
-                return DATABASE.getValueFromString(chatId, PICTURE);
+                return DATABASE.getValueFromTable(chatId, PICTURE);
             }
         }else{
             return null;
@@ -327,7 +327,7 @@ public class ChatManager {
      * Проверка существования личного чата
      */
     private Boolean isPrivateChatAlreadyExists(String creator, String user, Context ctx) {
-        String allCreatorsChats = DATABASE.getValueFromString(creator, CHAT_LIST);
+        String allCreatorsChats = DATABASE.getValueFromTable(creator, CHAT_LIST);
         if (allCreatorsChats != null && !allCreatorsChats.equals("")) {
             String[] allCreatorsChatsArray = allCreatorsChats.split(",");
             for (String chatId : allCreatorsChatsArray) {
@@ -362,7 +362,7 @@ public class ChatManager {
         DATABASE.deleteUserFromChat(chatId, usersInChat);
         DATABASE.deleteChat(chatId);
         SseConnectionsManager.sendEvent(usersInChat, SseEvents.CHAT_IS_DELETED, getChatIdAsJson(chatId).toString());
-        Arrays.stream(usersInChat.split(",")).forEach(user-> DATABASE.deleteStringFromTable(user + "_" + LAST_READ_ID, CHAT_ID, chatId));
+        Arrays.stream(usersInChat.split(",")).forEach(user-> DATABASE.deleteFromTable(user + "_" + LAST_READ_ID, CHAT_ID, chatId));
     }
 
     private JsonObject getChatIdAsJson(String chatId) {
@@ -375,7 +375,7 @@ public class ChatManager {
      * Возвращает строку с именами юзеров в чате через запятую
      */
     public String getUsersInChat(String chatId) {
-        return DATABASE.getValueFromString(chatId, USERS);
+        return DATABASE.getValueFromTable(chatId, USER);
     }
 
     private void exitFromSimpleChat(String chatId, String usersInChat, String userForDelete) {
@@ -390,7 +390,7 @@ public class ChatManager {
             }
             DATABASE.deleteUserFromChat(chatId, userForDelete);
         }
-        DATABASE.deleteStringFromTable(userForDelete + "_" + LAST_READ_ID, CHAT_ID, chatId);
+        DATABASE.deleteFromTable(userForDelete + "_" + LAST_READ_ID, CHAT_ID, chatId);
         SseConnectionsManager.sendEvent(userForDelete, SseEvents.CHAT_IS_DELETED, getChatIdAsJson(chatId).toString());
     }
 
@@ -399,19 +399,19 @@ public class ChatManager {
      */
     private void exitFromSmartChat(String chatId, String userForDelete) {
         System.out.println("exitFromSmartChat");
-        String usersInChat = DATABASE.getValueFromString(chatId, USERS);
+        String usersInChat = DATABASE.getValueFromTable(chatId, USER);
         if (getUserRoleInChat(chatId, userForDelete).equals(OWNER)) {
             Arrays.stream(usersInChat.split(",")).forEach(user -> {
                 DATABASE.deleteUserFromChat(chatId, user);
                 SseConnectionsManager.sendEvent(user, SseEvents.CHAT_IS_DELETED, getChatInfoAsJson(chatId, user).toString());
-                DATABASE.deleteStringFromTable(user + "_" + LAST_READ_ID, CHAT_ID, chatId);
+                DATABASE.deleteFromTable(user + "_" + LAST_READ_ID, CHAT_ID, chatId);
             });
             DATABASE.deleteChat(chatId);
         } else {
             DATABASE.deleteUserFromChat(chatId, userForDelete);
             SseConnectionsManager.sendEvent(userForDelete, SseEvents.CHAT_IS_DELETED, getChatInfoAsJson(chatId, userForDelete).toString());
             SseConnectionsManager.sendEvent(usersInChat, SseEvents.USER_IS_DELETED, getChatMemberInfoAsJson(chatId, userForDelete).toString());
-            DATABASE.deleteStringFromTable(userForDelete + "_" + LAST_READ_ID, CHAT_ID, chatId);
+            DATABASE.deleteFromTable(userForDelete + "_" + LAST_READ_ID, CHAT_ID, chatId);
         }
     }
 
@@ -419,7 +419,7 @@ public class ChatManager {
      * Отправка данных о чате всем юзерам в этом чате
      */
     public void sendDataOfChatForUsersInChat(String chatId, String event) {
-        String usersInChat = DATABASE.getValueFromString(chatId, USERS);
+        String usersInChat = DATABASE.getValueFromTable(chatId, USER);
         System.out.println("InSendDataOfChatForUsersInChat\n" + usersInChat);
         if (!usersInChat.equals("")) {
             System.out.println("sendDataOfChatForUsersInChat");
@@ -436,13 +436,13 @@ public class ChatManager {
      * Возвращает роль юзера в чате
      */
     public static String getUserRoleInChat(String chatId, String userName) {
-        String admins = DATABASE.getValueFromString(chatId, ADMINS);
+        String admins = DATABASE.getValueFromTable(chatId, ADMINS);
         if (admins != null) {
             if (admins.contains(userName)) {
                 return ADMIN;
             }
         }
-        if (userName.equals(DATABASE.getValueFromString(chatId, OWNER))) {
+        if (userName.equals(DATABASE.getValueFromTable(chatId, OWNER))) {
             return OWNER;
         }
         return NONE;
@@ -458,13 +458,13 @@ public class ChatManager {
         dataOfChat.addProperty(ID, chatId);
         dataOfChat.addProperty(TYPE, type);
         dataOfChat.addProperty(LAST_READ_ID, DATABASE.getLastReadId(chatId, openerName));
-        dataOfChat.addProperty(PICTURE, getChatPicture(chatId, DATABASE.getValueFromString(USERS, NAME, openerName, KEY)));
+        dataOfChat.addProperty(PICTURE, getChatPicture(chatId, DATABASE.getValueFromTable(USER, NAME, openerName, SESSION)));
         if (type.equals(PRIVATE_CHAT)) {
             String companionName = getUsersInChat(chatId).replace(openerName, "").replace(",", "");
             dataOfChat.addProperty(TITLE, companionName);
         } else {
-            dataOfChat.addProperty(TITLE, DATABASE.getValueFromString(chatId, NAME));
-            dataOfChat.addProperty(BIO, DATABASE.getValueFromString(chatId, BIO));
+            dataOfChat.addProperty(TITLE, DATABASE.getValueFromTable(chatId, NAME));
+            dataOfChat.addProperty(BIO, DATABASE.getValueFromTable(chatId, BIO));
             dataOfChat.addProperty(ROLE, getUserRoleInChat(chatId, openerName));
         }
         return dataOfChat;
@@ -477,9 +477,9 @@ public class ChatManager {
         if (chatId != null) {
             JsonObject dataOfUser = new JsonObject();
             dataOfUser.addProperty(NAME, user);
-            dataOfUser.addProperty(BIO, DATABASE.getValueFromString(user, BIO));
-            dataOfUser.addProperty(TIME, DATABASE.getValueFromString(user, TIME_STAMP));
-            dataOfUser.addProperty(PICTURE, DATABASE.getValueFromString(user, PICTURE));
+            dataOfUser.addProperty(BIO, DATABASE.getValueFromTable(user, BIO));
+            dataOfUser.addProperty(TIME, DATABASE.getValueFromTable(user, TIMESTAMP));
+            dataOfUser.addProperty(PICTURE, DATABASE.getValueFromTable(user, PICTURE));
             if (!chatId.equals("")) {
                 dataOfUser.addProperty(ID, chatId);
                 if (!getChatType(chatId).equals(PRIVATE_CHAT)) {

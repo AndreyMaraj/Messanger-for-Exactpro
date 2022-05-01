@@ -22,9 +22,6 @@ public class DataBase {
         }
     }
 
-    /**
-     * Проверка существования данных в таблице
-     */
     public boolean checkDataExistsInTable(String table, String column, String data) {
         try {
             Statement statement = connection.createStatement();
@@ -42,10 +39,7 @@ public class DataBase {
         }
     }
 
-    /**
-     * Получение значения из строки таблицы
-     */
-    public String getValueFromString(String table, String column, String value, String targetColumn) {
+    public String getValueFromTable(String table, String column, String value, String targetColumn) {
         try {
             Statement statement = connection.createStatement();
             String res = statement.executeQuery("SELECT * FROM '" + table + "' WHERE " + column + " = '" + value + "'").getString(targetColumn);
@@ -57,10 +51,7 @@ public class DataBase {
         }
     }
 
-    /**
-     * Получение значения из колонки таблицы
-     */
-    public String getValueFromString(String table, String column) {
+    public String getValueFromTable(String table, String column) {
         try {
             Statement statement = connection.createStatement();
             //System.out.println("SELECT * FROM '" + table + "' WHERE flag='1' " + column);
@@ -73,15 +64,12 @@ public class DataBase {
         }
     }
 
-    /**
-     * Созданние таблицы чата в БД
-     */
     public void createChat(String chatId, String chatName, String type, String owner) {
         try {
             Statement statement = connection.createStatement();
             statement.execute("CREATE TABLE '" + chatId + "'(" +
                     NAME + " TEXT PRIMARY KEY NOT NULL,\n" +
-                    USERS + " TEXT,\n" +
+                    USER + " TEXT,\n" +
                     PICTURE + " TEXT,\n" +
                     OWNER + " TEXT,\n" +
                     ADMINS + " TEXT,\n" +
@@ -100,9 +88,6 @@ public class DataBase {
         }
     }
 
-    /**
-     * Создание таблицы-хранилища сообщений
-     **/
     public void createChatMessagesStorageTable(String chatId) {
         try {
             Statement statement = connection.createStatement();
@@ -142,9 +127,6 @@ public class DataBase {
         }
     }
 
-    /**
-     * Добавление сообщения в хранилище сообщений
-     */
     public void addMessageToStorage(String chatId, JsonObject message) {
         try {
             Statement statement = connection.createStatement();
@@ -166,29 +148,26 @@ public class DataBase {
         }
     }
 
-    public  void setTrueReadIndicatorIntoMessage(String chatId, JsonObject message){
+    public void setTrueReadIndicatorIntoMessage(String chatId, JsonObject message) {
         try {
             Statement statement = connection.createStatement();
-            statement.executeUpdate("UPDATE '" + MESSAGE_ + chatId + "' set " + READ +  "=" + true +  " where id = '" + message.get(ID).getAsString() + "'");
+            statement.executeUpdate("UPDATE '" + MESSAGE_ + chatId + "' set " + READ + "=" + true + " where id = '" + message.get(ID).getAsString() + "'");
             statement.close();
         } catch (Exception e) {
             System.out.println("----------------------------------------------- setTrueReadIndicatorIntoMessage: Ошибка " + message.toString() + "\n" + e.getMessage());
         }
     }
 
-    public void changeSenderNameInMessage(String chatId, String newName, JsonObject message){
+    public void changeSenderNameInMessage(String chatId, String newName, JsonObject message) {
         try {
             Statement statement = connection.createStatement();
-            statement.executeUpdate("UPDATE '" + MESSAGE_ + chatId + "' set " + SENDER +  "='" + newName +  "' where id = '" + message.get(ID).getAsString() + "'");
+            statement.executeUpdate("UPDATE '" + MESSAGE_ + chatId + "' set " + SENDER + "='" + newName + "' where id = '" + message.get(ID).getAsString() + "'");
             statement.close();
         } catch (Exception e) {
             System.out.println("----------------------------------------------- changeSenderNameInMessage: Ошибка " + message.toString() + "\n" + e.getMessage());
         }
     }
 
-    /**
-     * Редактировние сообщения
-     */
     public void editMessageInStorage(String chatId, JsonObject message) {
         System.out.println("IN editMessageInStorage");
         try {
@@ -197,7 +176,7 @@ public class DataBase {
             statement.executeUpdate("UPDATE '" + MESSAGE_ + chatId + "' SET (" + TEXT + "," + EDITED + "," + SENT + "," + READ + ") = ('"
                     + message.get(TEXT).getAsString() + "'," + TRUE + "," + TRUE + "," + FALSE + ") where " + ID + "='" + message.get(ID).getAsString() + "'");
             updateValueInTable(MESSAGE_ + chatId, FILES, "[]", ID, message.get(ID).getAsString());
-            deleteStringFromTable(FILES_ + chatId, ID, chatId);
+            deleteFromTable(FILES_ + chatId, ID, chatId);
             addFilesIntoMessage(chatId, message.get(ID).getAsString(), message.get(FILES).getAsJsonArray());
             statement.close();
         } catch (Exception e) {
@@ -205,15 +184,12 @@ public class DataBase {
         }
     }
 
-    /**
-     * Добавление файла в массив файлов в сообщении
-     */
     public void addFileToFilesJsonArray(String table, String columnToAdd, String pointColumn, String value, JsonObject file) {
         try {
             JsonObject fileCopy = file.deepCopy();
             fileCopy.remove(BYTES);
             if (file.has(BYTES)) {
-                String files = getValueFromString(table, pointColumn, value, columnToAdd);
+                String files = getValueFromTable(table, pointColumn, value, columnToAdd);
                 JsonArray filesArray;
                 if (files != null && !files.equals("")) {
                     filesArray = new Gson().fromJson(files, JsonArray.class);
@@ -231,9 +207,6 @@ public class DataBase {
         }
     }
 
-    /**
-     * Прикрепление файлов к сообщению
-     */
     public void addFilesIntoMessage(String chatId, String messageId, JsonArray files) {
         try {
             Statement statement = connection.createStatement();
@@ -269,29 +242,26 @@ public class DataBase {
         }
     }
 
-    /**
-     * Получение сообщения из БД как jsonObject
-     */
     public JsonObject getMessageFromTable(String chatId, String messageId) {
         try {
             JsonObject message = new JsonObject();
-            String sender = getValueFromString(MESSAGE_ + chatId, ID, messageId, SENDER);
-            message.addProperty(ID, getValueFromString(MESSAGE_ + chatId, ID, messageId, ID));
-            message.addProperty(CHAT_ID, getValueFromString(MESSAGE_ + chatId, ID, messageId, CHAT_ID));
-            message.addProperty(DATE, getValueFromString(MESSAGE_ + chatId, ID, messageId, DATE));
-            message.addProperty(TIME, getValueFromString(MESSAGE_ + chatId, ID, messageId, TIME));
+            String sender = getValueFromTable(MESSAGE_ + chatId, ID, messageId, SENDER);
+            message.addProperty(ID, getValueFromTable(MESSAGE_ + chatId, ID, messageId, ID));
+            message.addProperty(CHAT_ID, getValueFromTable(MESSAGE_ + chatId, ID, messageId, CHAT_ID));
+            message.addProperty(DATE, getValueFromTable(MESSAGE_ + chatId, ID, messageId, DATE));
+            message.addProperty(TIME, getValueFromTable(MESSAGE_ + chatId, ID, messageId, TIME));
             message.addProperty(SENDER, sender);
-            message.addProperty(TEXT, getValueFromString(MESSAGE_ + chatId, ID, messageId, TEXT));
-            if (getValueFromString(MESSAGE_ + chatId, ID, messageId, FILES) != null &&
-                    !getValueFromString(MESSAGE_ + chatId, ID, messageId, FILES).equals("[]") && !getValueFromString(MESSAGE_ + chatId, ID, messageId, FILES).equals("")) {
-                message.add(FILES, new Gson().fromJson(getValueFromString(MESSAGE_ + chatId, ID, messageId, FILES), JsonArray.class));
+            message.addProperty(TEXT, getValueFromTable(MESSAGE_ + chatId, ID, messageId, TEXT));
+            if (getValueFromTable(MESSAGE_ + chatId, ID, messageId, FILES) != null &&
+                    !getValueFromTable(MESSAGE_ + chatId, ID, messageId, FILES).equals("[]") && !getValueFromTable(MESSAGE_ + chatId, ID, messageId, FILES).equals("")) {
+                message.add(FILES, new Gson().fromJson(getValueFromTable(MESSAGE_ + chatId, ID, messageId, FILES), JsonArray.class));
             } else {
                 message.add(FILES, null);
             }
-            message.addProperty(READ, getValueFromString(MESSAGE_ + chatId, ID, messageId, READ).equals("1"));
-            message.addProperty(SENT, getValueFromString(MESSAGE_ + chatId, ID, messageId, SENT).equals("1"));
-            message.addProperty(EDITED, getValueFromString(MESSAGE_ + chatId, ID, messageId, EDITED).equals("1"));
-            message.addProperty(SENDER_PICTURE, getValueFromString(sender, PICTURE));
+            message.addProperty(READ, getValueFromTable(MESSAGE_ + chatId, ID, messageId, READ).equals("1"));
+            message.addProperty(SENT, getValueFromTable(MESSAGE_ + chatId, ID, messageId, SENT).equals("1"));
+            message.addProperty(EDITED, getValueFromTable(MESSAGE_ + chatId, ID, messageId, EDITED).equals("1"));
+            message.addProperty(SENDER_PICTURE, getValueFromTable(sender, PICTURE));
             return message;
         } catch (Exception e) {
             System.out.println("----------------------------------------------- getMessageFromTable: Ошибка " + e.getMessage());
@@ -299,9 +269,6 @@ public class DataBase {
         }
     }
 
-    /**
-     * Удаление хранилища сообщений
-     */
     public void deleteChatMessageStorage(String chatId) {
         try {
             System.out.println("deleteChatMessageStorage chatId = " + chatId);
@@ -312,9 +279,6 @@ public class DataBase {
         }
     }
 
-    /**
-     * Возвращает все сообщения в чате
-     */
     public ArrayList<String> getAllIdMessages(String chatId) {
         try {
             Statement statement = connection.createStatement();
@@ -331,11 +295,10 @@ public class DataBase {
         }
     }
 
-
     public void addItemIntoList(String table, String columnToUpdate, String newValue, String pointColumn, String pointValue) {
         try {
             Statement statement = connection.createStatement();
-            String oldValue = getValueFromString(table, pointColumn, pointValue, columnToUpdate);
+            String oldValue = getValueFromTable(table, pointColumn, pointValue, columnToUpdate);
             if (oldValue != null && !oldValue.equals("")) {
                 statement.executeUpdate("UPDATE '" + table + "' SET " + columnToUpdate + " = ('" + oldValue + "," + newValue + "') WHERE " + pointColumn + " = '" + pointValue + "'");
             } else {
@@ -350,7 +313,7 @@ public class DataBase {
     public void deleteItemFromList(String table, String columnToUpdate, String valueToDelete, String pointColumn, String pointValue) {
         try {
             Statement statement = connection.createStatement();
-            String old_chats = getValueFromString(table, pointColumn, pointValue, columnToUpdate);
+            String old_chats = getValueFromTable(table, pointColumn, pointValue, columnToUpdate);
             if (old_chats != null && !old_chats.equals("")) {
                 ArrayList<String> chats = new ArrayList<>(Arrays.asList(old_chats.split(","))); // массив чатов
                 if (chats.contains(valueToDelete)) {
@@ -375,10 +338,7 @@ public class DataBase {
         }
     }
 
-    /**
-     * Удаление строки из таблицы
-     */
-    public void deleteStringFromTable(String table, String column, String value) {
+    public void deleteFromTable(String table, String column, String value) {
         try {
             Statement statement = connection.createStatement();
             statement.execute("DELETE FROM '" + table + "' WHERE " + column + " = '" + value + "'");
@@ -389,25 +349,22 @@ public class DataBase {
     }
 
     public void addUserInChat(String chatId, String user) {
-        addItemIntoList(chatId, USERS, user, FLAG, "1");
+        addItemIntoList(chatId, USER, user, FLAG, "1");
         addItemIntoList(user, CHAT_LIST, chatId, FLAG, "1");
         setLastReadId(chatId, "", user);
     }
 
     public void deleteUserFromChat(String chatId, String users) {
         Arrays.stream(users.split(",")).forEach(user -> {
-            if (user.equals(getValueFromString(chatId, OWNER))){
+            if (user.equals(getValueFromTable(chatId, OWNER))) {
                 updateValueInTable(chatId, OWNER, "", FLAG, "1");
             }
             deleteItemFromList(user, CHAT_LIST, chatId, FLAG, "1");
-            deleteItemFromList(chatId, USERS, user, FLAG, "1");
+            deleteItemFromList(chatId, USER, user, FLAG, "1");
             updateValueInTable(user + "_" + LAST_READ_ID, ID, "", CHAT_ID, chatId);
         });
     }
 
-    /**
-     * Iзметение типа чата
-     */
     public void changeChatType(String chatId, String type) {
         if (type.equals(SIMPLE_CHAT)) {
             updateValueInTable(chatId, ADMINS, "", FLAG, "1");
@@ -416,55 +373,94 @@ public class DataBase {
     }
 
     // внесение данных в БД (имя и пароль)
-    public void addIntoUsersTable(String id, String name, String password, String sessionKey) {
+    public void registerUser(String login, String password, String session) {
         try {
             Statement statement = connection.createStatement();
-            statement.executeUpdate("INSERT or REPLACE into users (userId, name, password, key) " +
-                    "VALUES ('" + id + "','" + name + "','" + password + "','" + sessionKey + "') ");
+            statement.executeUpdate("INSERT or REPLACE into user (login, password, session) " +
+                    "VALUES ('" + login + "','" + password + "','" + session + "')");
             statement.close();
         } catch (Exception e) {
             System.out.println("----------------------------------------------- ERROR addIntoUsersTable: " + e.getMessage());
         }
     }
 
-    /**
-     * Создание таблицы юзера
-     */
-    public void createUserTable(String id, String name, String bio, String picture) {
+    public void updateValueInTable(String table, String column_to_update, String update_data, String point_column, String data) {
         try {
             Statement statement = connection.createStatement();
-            statement.execute("CREATE TABLE " + name + " (\n" +
-                    ID + " TEXT PRIMARY KEY NOT NULL,\n" +
-                    NAME + " TEXT,\n" +
-                    BIO + " TEXT,\n" +
-                    PICTURE + " TEXT,\n" +
-                    TIME_STAMP + " TEXT,\n" +
-                    CHAT_LIST + " TEXT,\n" +
-                    FLAG + " TEXT\n" + ");");
-            statement.executeUpdate("INSERT into " + name + " (id, name, bio, picture, flag) VALUES ('" + id + "','" + name + "','" + bio + "','" + picture + "','1') "); // запрос на обновление данных
+            statement.executeUpdate("UPDATE '" + table + "' SET "
+                    + column_to_update + " = ('" + update_data + "') WHERE " + point_column + " = '" + data + "'");
             statement.close();
-            createLastReadMessageIdTables(name);
         } catch (Exception e) {
-            System.out.println("----------------------------------------------- ERROR: CreateUserTable: Не удалось создать профиль для юзера " + e.getMessage());
+            System.out.println("----------------------------------------------- ERROR: updateValueInTable " + e.getMessage());
         }
     }
 
-    /**
-     * Iзменение строки таблицы
-     */
-    public void updateValueInTable(String table, String column_to_update, String update_data, String point_column, String flag) {
+    public void updateValueInTable(String table, String column_to_update, String update_data, String point_column1, String data1,
+                                   String point_column2, String data2) {
         try {
             Statement statement = connection.createStatement();
-            statement.executeUpdate("UPDATE '" + table + "' SET " + column_to_update + " = ('" + update_data + "') WHERE " + point_column + " = '" + flag + "'");
+            statement.executeUpdate("UPDATE '" + table + "' SET "
+                    + column_to_update + " = ('" + update_data + "') WHERE " + point_column1 + " = '" + data1 + "' AND " + point_column2 + " = '" + data2 + "'");
             statement.close();
         } catch (Exception e) {
-            System.out.println("----------------------------------------------- ERROR: updateTableSettings: Не удалось добавить информацию о пользователе " + e.getMessage());
+            System.out.println("----------------------------------------------- ERROR: updateValueInTable " + e.getMessage());
         }
     }
 
-    /**
-     * Получение имен всех зарегистрированных юзеров
-     */
+    private Integer countFolders() {
+        try {
+            Statement statement = connection.createStatement();
+            return statement.executeQuery("SELECT * FROM folder").getFetchSize();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public Integer addNewFolder(String folderName) {
+        try {
+            Statement statement = connection.createStatement();
+            int id = countFolders();
+            statement.executeUpdate("INSERT INTO folder (id, name) VALUES (" + (id + 1) + ", " + folderName + ")");
+            statement.close();
+            return id+1;
+        } catch (Exception e) {
+            System.out.println("----------------------------------------------- ERROR: addNewFolder " + e.getMessage());
+            return null;
+        }
+    }
+
+    public ArrayList<String> getAllFoldersByUser(String login){
+        try {
+            Statement statement = connection.createStatement();
+            ResultSet names = statement.executeQuery("SELECT folder FROM " + USER_CHAT + " WHERE user = " + login);
+            ArrayList<String> result = new ArrayList<>();
+            while (names.next()) {
+                result.add(names.getString(ID));
+            }
+            statement.close();
+            return result;
+        } catch (Exception e) {
+            System.out.println("----------------------------------------------- ERROR: getAllFoldersByUser " + e.getMessage());
+            return null;
+        }
+    }
+
+    public ArrayList<String> getAllChatsInFolder(String login, String folder){
+        try {
+            Statement statement = connection.createStatement();
+            ResultSet names = statement.executeQuery("SELECT chat FROM " + USER_CHAT + " WHERE user = " + login + " AND folder = " + folder);
+            ArrayList<String> result = new ArrayList<>();
+            while (names.next()) {
+                result.add(names.getString(ID));
+            }
+            statement.close();
+            return result;
+        } catch (Exception e) {
+            System.out.println("----------------------------------------------- ERROR: getAllFoldersByUser " + e.getMessage());
+            return null;
+        }
+    }
+
     public ArrayList<String> getAllUserNames() {
         try {
             Statement statement = connection.createStatement();
@@ -481,9 +477,6 @@ public class DataBase {
         }
     }
 
-    /**
-     * Получение имен всех зарегистрированных юзеров как строка через запятую
-     */
     public String getAllUserNamesAsString() {
         try {
             return getAllUserNames().toString().replace(" ", "").replace("[", "").replace("]", "");
@@ -493,9 +486,6 @@ public class DataBase {
         }
     }
 
-    /**
-     * Удаление таблицы чата
-     */
     public void deleteChat(String chatId) {
         try {
             Statement statement = connection.createStatement();
@@ -508,7 +498,7 @@ public class DataBase {
         }
     }
 
-    public void deleteTable(String tableName){
+    public void deleteTable(String tableName) {
         try {
             Statement statement = connection.createStatement();
             System.out.println("DROP TABLE '" + tableName + "'");
@@ -519,9 +509,6 @@ public class DataBase {
         }
     }
 
-    /**
-     * Переименование таблицы
-     */
     public void renameTable(String oldName, String newName) {
         try {
             Statement statement = connection.createStatement();
@@ -552,7 +539,7 @@ public class DataBase {
         }
     }
 
-    public void setLastReadId(String chatId, String messageId, String userName){
+    public void setLastReadId(String chatId, String messageId, String userName) {
         try {
             Statement statement = connection.createStatement();
             System.out.println("chatId = " + chatId + " messageId = " + messageId);
@@ -564,7 +551,7 @@ public class DataBase {
         }
     }
 
-    public String getLastReadId(String chatId, String userName){
-        return getValueFromString(userName + "_" + LAST_READ_ID, CHAT_ID, chatId, ID);
+    public String getLastReadId(String chatId, String userName) {
+        return getValueFromTable(userName + "_" + LAST_READ_ID, CHAT_ID, chatId, ID);
     }
 }
