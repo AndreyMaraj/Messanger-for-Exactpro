@@ -11,7 +11,7 @@ export default class Cookie{
         var results = document.cookie.match ( '(^|;) ?' + key + '=([^;]*)(;|$)' )
         return results ? unescape(results[2]) : null
     }
-
+    
     // Удаление значения куки 
     public static Clear(key: string): void{
         var cookies = document.cookie.split(";")

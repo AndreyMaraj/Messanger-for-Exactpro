@@ -3,8 +3,13 @@ import Cookie from '../Cookie'
 import Requests from '../Requests'
 import MessagesStore from '../stores/MessagesStore'
 import {MessagesUpdate} from "../interfaces/MessagesUpdate"
-import { Avatar, Button, createStyles, makeStyles, Theme } from '@material-ui/core'
+import { Avatar, Button, createStyles, IconButton, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, makeStyles, Theme } from '@material-ui/core'
 import { ChatsUpdate } from '../interfaces/ChatsUpdate'
+import DeleteIcon from '@material-ui/icons/Delete';
+import EditIcon from '@material-ui/icons/Edit';
+import DoneIcon from '@material-ui/icons/Done';
+import DoneAllIcon from '@material-ui/icons/DoneAll';
+import React from 'react'
 
 // сообщения чата
 const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore: MessagesStore, chatInfo: ChatsUpdate, EditMessage: (message: MessagesUpdate)=> void})=>{
@@ -17,7 +22,7 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
                 height: 350
             },
             myMessage: {
-                background: 'gray'
+                background: 'deepskyblue'
             },
             anyMessage: {
 
@@ -25,7 +30,11 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
             smallAvatar: {
                 width: theme.spacing(5),
                 height: theme.spacing(5)
-            }
+            },
+            root: {
+                width: '100%',
+                backgroundColor: theme.palette.background.paper,
+              },
         })
     )
     const classes = useStyles() // классы стилей
@@ -95,9 +104,7 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
     }
 
     return (
-        <div 
-            className={classes.messages}
-        >
+        <List className={classes.root} >
             {messagesStore.messagesData.map((message: MessagesUpdate, index: number) => {
                 if (chatInfo.id === message.chatId){ // если сообщение из этого чата
                     var messageWithSources: any[] = []
@@ -120,16 +127,35 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
                         ReadMessage(message) // прочтение сообщения
                     }
                     return(
-                        <div 
+                        <ListItem alignItems="flex-start" 
                             key={index}
                             className={message.mine ? classes.myMessage : classes.anyMessage}
                         >
-                            <Avatar 
-                                src={message.senderPicture} 
-                                className={classes.smallAvatar}
+                            <ListItemAvatar>
+                                <Avatar 
+                                    src={message.senderPicture} 
+                                    className={classes.smallAvatar}
+                                />
+                            </ListItemAvatar>
+                            <ListItemText
+                                primary={message.sender}
+                                secondary={
+                                    <React.Fragment>
+                                        {messageWithSources}
+                                        <div>
+                                            {message.time}
+                                            {message.edited ?
+                                                <EditIcon />
+                                            : null
+                                            }
+                                            {message.mine && message.read ?
+                                                <DoneAllIcon/>
+                                            : <DoneIcon />
+                                            }
+                                        </div>
+                                    </React.Fragment>
+                                }
                             />
-                            {message.time + " " + message.sender + ": "}
-                            {messageWithSources}
                             {sourcesAttachments.map((source: string, i: number)=>{
                                 if(source.substring(source.lastIndexOf('.')) === '.png' || source.substring(source.lastIndexOf('.')) === '.jpg' || source.substring(source.lastIndexOf('.')) === '.jpeg' || source.substring(source.lastIndexOf('.')) === '.svg'){
                                     return <img key={i} src={source}/>
@@ -163,27 +189,26 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
                                 }
                             })
                             }
-                            {message.edited ?
-                                <a>   edited</a>
-                            : null
-                            }
-                            {message.mine && message.read ?
-                                <a>   read</a>
-                            : null
-                            }
+                            <ListItemSecondaryAction>
                             {message.mine ?
-                                <Button onClick={()=>EditMessage(message)}>Edit</Button>
+                                <IconButton edge="end" aria-label="delete">
+                                    <EditIcon onClick={()=>EditMessage(message)}/>
+                                </IconButton>
                             : null
                             }
-                            {message.mine || (chatInfo.type === '2' && (chatInfo.role === 'owner' || (chatInfo.role === 'admin' && message.senderRole === 'none'))) ?
-                                <Button onClick={()=>DeleteMessage(message.id)}>Delete</Button>
-                            : null
-                            }
-                        </div>
+                                {message.mine || (chatInfo.type === '2' && (chatInfo.role === 'owner' || (chatInfo.role === 'admin' && message.senderRole === 'none'))) ?
+                                    <IconButton edge="end" aria-label="delete">
+                                        <DeleteIcon onClick={()=>DeleteMessage(message.id)}/>
+                                    </IconButton>
+                                : null
+                                }
+                                
+                            </ListItemSecondaryAction>
+                        </ListItem>
                     )
                 }
             })}
-        </div>
+        </List>
     )
 })
 

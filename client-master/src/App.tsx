@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 import Authorization from "./components/Authorization"
 import Messenger from './components/Messenger'
 import UpdateListener from './components/UpdateListener'
@@ -7,6 +7,8 @@ import OnlineStatusStore from './stores/OnlineStatusStore'
 import MessagesStore from './stores/MessagesStore'
 import GroupUsersStore from './stores/GroupUsersStore'
 import ProfileStore from './stores/ProfileStore'
+import { BrowserRouter, Route, Routes} from 'react-router-dom'
+import { Redirect } from 'react-router'
 
 const App = () => {
 
@@ -15,31 +17,43 @@ const App = () => {
   const groupUsersStore: GroupUsersStore = new GroupUsersStore() // хранилище пользователей беседы
   const profileStore: ProfileStore = new ProfileStore() // хранилище инофрмации о профиле пользователя
   const onlineStatusStore: OnlineStatusStore = new OnlineStatusStore() // хранилище информации о последнем отправки статуса "онлайн" на сервер пользователями
-  const [item, setItem] = useState<string>('Authorization') // отображаемый элемент 
-  
+  const [item, setItem] = useState<string>('Authorization') // отображаемый элемент
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+
+  if(isLoggedIn) {
+    <Redirect to='/profile' />
+  } else {
+    <Redirect to='/authorization' />
+  }
+
   // Отображение элемента
   function SetItem(): JSX.Element {
-    switch(item){
+    switch (item) {
       case 'Authorization': // форма авторизации
-        return(
-          <Authorization LogIn={()=>setItem('Messenger')}/>
+        return (
+          <Authorization />
         )
       case 'Messenger': // Мессенджер
-        return(
+        return (
           <div id='root'>
-            <UpdateListener chatsStore={chatsStore} messagesStore={messagesStore} groupUsersStore={groupUsersStore} profileStore={profileStore} onlineStatusStore={onlineStatusStore}/>
-            <Messenger chatsStore={chatsStore} messagesStore={messagesStore} groupUsersStore={groupUsersStore} profileStore={profileStore} onlineStatusStore={onlineStatusStore} Disconnect={()=>setItem('Authorization')}/>
+            <UpdateListener chatsStore={chatsStore} messagesStore={messagesStore} groupUsersStore={groupUsersStore} profileStore={profileStore} onlineStatusStore={onlineStatusStore} />
+            <Messenger chatsStore={chatsStore} messagesStore={messagesStore} groupUsersStore={groupUsersStore} profileStore={profileStore} onlineStatusStore={onlineStatusStore} Disconnect={() => setItem('Authorization')} />
           </div>
         )
       default:
-        return(
-          <React.Fragment/>
+        return (
+          <React.Fragment />
         )
     }
   }
 
   return (
-    SetItem()
+    <BrowserRouter>
+      <Routes>
+        <Route path="authorization" element={<Authorization />} />
+        <Route path="messenger" element={<Messenger chatsStore={chatsStore} messagesStore={messagesStore} groupUsersStore={groupUsersStore} profileStore={profileStore} onlineStatusStore={onlineStatusStore} Disconnect={() => setItem('Authorization')}/>} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 

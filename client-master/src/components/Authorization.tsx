@@ -4,13 +4,14 @@ import Cookie from '../Cookie'
 import { makeStyles } from '@material-ui/core/styles'
 import { Avatar, Button, Container, TextField, Typography } from '@material-ui/core'
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined'
+import { Redirect } from 'react-router'
 
 // Форма авторизации (вход/регистрация)
-const Authorization = (props: { LogIn: () => void }) => {
+const Authorization = () => {
 
   const [username, setUsername] = useState<string>("") // Введеный ник
   const [password, setPassword] = useState<string>("") // Введенный пароль
-  const crypt = require('crypto') // Функция хэширования пароля
+  // const crypt = require('crypto') // Функция хэширования пароля
   // Стили для формы
   const useStyles: any = makeStyles((theme) => ({ 
     paper: {
@@ -45,10 +46,11 @@ const Authorization = (props: { LogIn: () => void }) => {
 
   // Успешная авторизация
   function IsAuthorized(): void{
-    props.LogIn() // Выход из формы авторизации
+    // props.LogIn() // Выход из формы авторизации
     var request: {responseText: string, status: number} | null = Requests.Alive() // Оповщение сервер, что клиент "онлайн"
     switch(request?.status){
       case 0:
+        <Redirect to='/messenger' />
         break
       case 200:
         break
@@ -64,7 +66,8 @@ const Authorization = (props: { LogIn: () => void }) => {
   // Вход в мессенджер
   function LogIn(): void{
     if (FormSubmit()) {
-      var hashPassword: string = crypt.createHash('sha256').update(password).digest('hex') // Хэширование пароля
+      // var hashPassword: string = crypt.createHash('sha256').update(password).digest('hex') // Хэширование пароля
+      var hashPassword: string = password // Хэширование пароля
       var request: {responseText: string, status: number} = Requests.LogIn(username, hashPassword) // Запрос на вход
       switch(request.status){
         case 200:
@@ -86,7 +89,8 @@ const Authorization = (props: { LogIn: () => void }) => {
     if (FormSubmit()){
       var data: {name: string, password: string} = { // Формирование данных для запроса на сервер
         name: username,
-        password: crypt.createHash('sha256').update(password).digest('hex') // Хэширование пароля
+        // password: crypt.createHash('sha256').update(password).digest('hex') // Хэширование пароля
+        password: password // Хэширование пароля
       }
       var request: {responseText: string, status: number} = Requests.SignIn(data) // Запорс на регистрацию
       switch(request.status){

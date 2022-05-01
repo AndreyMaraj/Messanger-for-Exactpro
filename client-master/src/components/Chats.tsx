@@ -17,6 +17,7 @@ import DeleteIcon from '@material-ui/icons/Delete'
 import AddIcon  from '@material-ui/icons/Add'
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import SearchIcon from '@material-ui/icons/Search';
+import { Create, Settings } from '@material-ui/icons'
 
 var ChatId: string
 
@@ -219,7 +220,7 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
                                     edge="start"
                                     className={classes.headerButton}
                                 >
-                                    <AddIcon/>
+                                    <Create/>
                                 </IconButton>
                             </Toolbar>
                         </AppBar>
