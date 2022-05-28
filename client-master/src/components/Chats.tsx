@@ -235,7 +235,7 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
                                 var newMessage: boolean = false
                                 messagesStore.messagesData.map((message: MessagesUpdate) =>{
                                     if(message.chatId === dialog.id){
-                                        if(newMessage){
+                                        if(newMessage && !message.mine){
                                             count++
                                         }
                                         if(message.id === dialog.lastReadIdMessage){

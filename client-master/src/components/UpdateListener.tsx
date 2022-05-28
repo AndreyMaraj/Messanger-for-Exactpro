@@ -36,24 +36,29 @@ const UpdateListener = ({chatsStore, messagesStore, groupUsersStore, profileStor
         console.log("subscribe to sse channel")
 
         sse.addEventListener("update", upd =>{ // обработка новых и измененных чатов
-            const data: ChatsUpdate = JSON.parse((upd as MessageEvent).data) as ChatsUpdate
-            console.log(data)
-            var newChat: boolean = true
-            for(var i = 0; i < chatsStore.chatsData.length; i++){
-                if (data.id === chatsStore.chatsData[i].id){ // если чат уже есть - изменяем его данные 
-                    chatsStore.chatsData[i].title = data.title
-                    chatsStore.chatsData[i].bio = data.bio
-                    chatsStore.chatsData[i].type = data.type
-                    chatsStore.chatsData[i].picture = data.picture
-                    chatsStore.chatsData[i].role = data.role
-                    newChat = false
-                    break
+            console.log(upd)
+            if((typeof upd) != 'string'){
+                const data: ChatsUpdate = JSON.parse((upd as MessageEvent).data) as ChatsUpdate
+                console.log(data)
+                var newChat: boolean = true
+                for(var i = 0; i < chatsStore.chatsData.length; i++){
+                    if (data.id === chatsStore.chatsData[i].id){ // если чат уже есть - изменяем его данные 
+                        chatsStore.chatsData[i].title = data.title
+                        chatsStore.chatsData[i].bio = data.bio
+                        chatsStore.chatsData[i].type = data.type
+                        chatsStore.chatsData[i].picture = data.picture
+                        chatsStore.chatsData[i].role = data.role
+                        newChat = false
+                        break
+                    }
+                }
+                if (newChat){ // если чата нет - добавляем
+                    chatsStore.addEntry(data)
                 }
             }
-            if (newChat){ // если чата нет - добавляем
-                chatsStore.addEntry(data)
-            }
-        })
+            })
+            
+           
 
         sse.addEventListener("chat-is-deleted", data =>{ // обработка удаленных чатов
             var chatId: string = JSON.parse((data as MessageEvent).data).id

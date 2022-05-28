@@ -3,8 +3,12 @@ import Cookie from '../Cookie'
 import Requests from '../Requests'
 import MessagesStore from '../stores/MessagesStore'
 import {MessagesUpdate} from "../interfaces/MessagesUpdate"
-import { Avatar, Button, createStyles, makeStyles, Theme } from '@material-ui/core'
+import { Avatar, Button, createStyles, IconButton, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, makeStyles, Theme } from '@material-ui/core'
 import { ChatsUpdate } from '../interfaces/ChatsUpdate'
+import DoneAllIcon from '@material-ui/icons/DoneAll';
+import EditIcon from '@material-ui/icons/Edit';
+import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
+import GetAppIcon from '@material-ui/icons/GetApp';
 
 // сообщения чата
 const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore: MessagesStore, chatInfo: ChatsUpdate, EditMessage: (message: MessagesUpdate)=> void})=>{
@@ -13,11 +17,11 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
         createStyles({
             messages: {
                 overflow: 'auto',
-                width: 600,
-                height: 350
+                width: '100%',
+                height: 500
             },
             myMessage: {
-                background: 'gray'
+                backgroundColor: '#00cfff'
             },
             anyMessage: {
 
@@ -25,6 +29,15 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
             smallAvatar: {
                 width: theme.spacing(5),
                 height: theme.spacing(5)
+            },
+            root: {
+                width: '100%',
+                backgroundColor: theme.palette.background.paper,
+            },
+            img: {
+                width: 300,
+                height: 300,
+                objectFit: 'cover'
             }
         })
     )
@@ -95,9 +108,8 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
     }
 
     return (
-        <div 
-            className={classes.messages}
-        >
+        <div className={classes.messages}>
+            <List className={classes.root}>
             {messagesStore.messagesData.map((message: MessagesUpdate, index: number) => {
                 if (chatInfo.id === message.chatId){ // если сообщение из этого чата
                     var messageWithSources: any[] = []
@@ -120,69 +132,73 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
                         ReadMessage(message) // прочтение сообщения
                     }
                     return(
-                        <div 
-                            key={index}
-                            className={message.mine ? classes.myMessage : classes.anyMessage}
-                        >
-                            <Avatar 
-                                src={message.senderPicture} 
-                                className={classes.smallAvatar}
-                            />
-                            {message.time + " " + message.sender + ": "}
-                            {messageWithSources}
-                            {sourcesAttachments.map((source: string, i: number)=>{
-                                if(source.substring(source.lastIndexOf('.')) === '.png' || source.substring(source.lastIndexOf('.')) === '.jpg' || source.substring(source.lastIndexOf('.')) === '.jpeg' || source.substring(source.lastIndexOf('.')) === '.svg'){
-                                    return <img key={i} src={source}/>
-                                }
-                                if(source.substring(source.lastIndexOf('.')) === '.mp3'){
-                                    return <audio key={i} controls src={source}/>
-                                }
-                                if(source.substring(source.lastIndexOf('.')) === '.mp4'){
-                                    return <video key={i} autoPlay loop muted controls src={source}/>
-                                }
-                            })}
-                            {message.files?.map((file: {name: string, type: string, id: string}, i: number)=>{
-                                var cookieKeySession: string | null = Cookie.Get('key') // Достаем из куки данные
-                                if(cookieKeySession){
-                                    return(
-                                        file.type?.slice(0, file.type?.indexOf('/')) === 'image' ?
-                                            <img key={i} src={"http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id}/>
-                                        : file.type?.slice(0, file.type?.indexOf('/')) === 'video' ?
-                                            <div>
-                                                <video key={i} autoPlay loop muted controls src={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)}></video>
-                                                <a href={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)} download={file.name}><button>Download</button></a>
-                                            </div>
-                                        : file.type?.slice(0, file.type?.indexOf('/')) === 'audio' ?
-                                            <div>
-                                                <audio key={i} controls src={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)} />
-                                                <a href={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)} download={file.name}><button>Download</button></a>
-                                            </div>
-                                        :
-                                            <a key={i} href={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)} download={file.name}><button>{file.name}</button></a>
-                                    )
-                                }
-                            })
-                            }
-                            {message.edited ?
-                                <a>   edited</a>
-                            : null
-                            }
-                            {message.mine && message.read ?
-                                <a>   read</a>
-                            : null
-                            }
-                            {message.mine ?
-                                <Button onClick={()=>EditMessage(message)}>Edit</Button>
-                            : null
-                            }
-                            {message.mine || (chatInfo.type === '2' && (chatInfo.role === 'owner' || (chatInfo.role === 'admin' && message.senderRole === 'none'))) ?
-                                <Button onClick={()=>DeleteMessage(message.id)}>Delete</Button>
-                            : null
-                            }
-                        </div>
+                        <ListItem key={index} className={message.mine ? classes.myMessage : classes.anyMessage}>
+                            <ListItemAvatar>
+                                <Avatar 
+                                    src={message.senderPicture} 
+                                    className={classes.smallAvatar} />
+                            </ListItemAvatar>
+                            <ListItemText primary={<div>
+                                {messageWithSources}
+                                {sourcesAttachments.map((source: string, i: number)=>{
+                                    if(source.substring(source.lastIndexOf('.')) === '.png' || source.substring(source.lastIndexOf('.')) === '.jpg' || source.substring(source.lastIndexOf('.')) === '.jpeg' || source.substring(source.lastIndexOf('.')) === '.svg'){
+                                        return <img key={i} src={source}/>
+                                    }
+                                    if(source.substring(source.lastIndexOf('.')) === '.mp3'){
+                                        return <audio key={i} controls src={source}/>
+                                    }
+                                    if(source.substring(source.lastIndexOf('.')) === '.mp4'){
+                                        return <video key={i} autoPlay loop muted controls src={source}/>
+                                    }
+                                })}
+                                {message.files?.map((file: {name: string, type: string, id: string}, i: number)=>{
+                                    var cookieKeySession: string | null = Cookie.Get('key') // Достаем из куки данные
+                                    if(cookieKeySession){
+                                        return(
+                                            file.type?.slice(0, file.type?.indexOf('/')) === 'image' ?
+                                                <img key={i} src={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)} className={classes.img}/>
+                                            : file.type?.slice(0, file.type?.indexOf('/')) === 'video' ?
+                                                <div>
+                                                    <video key={i} autoPlay loop muted controls src={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)} className={classes.img}></video>
+                                                    <a href={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)} download={file.name}><GetAppIcon/></a>
+                                                </div>
+                                            : file.type?.slice(0, file.type?.indexOf('/')) === 'audio' ?
+                                                <div>
+                                                    <audio key={i} controls src={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)} />
+                                                    <a href={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)} download={file.name}><GetAppIcon/></a>
+                                                </div>
+                                            :
+                                                <a key={i} href={FileRequest("http://127.0.0.1:8081/get-file?key=" + cookieKeySession + "&chatId=" + message.chatId + "&id=" + file.id)} download={file.name}><button>{file.name}</button></a>
+                                        )
+                                    }
+                                })} </div>} secondary={
+                                    <div>
+                                        {message.time}
+                                        {message.edited ?
+                                            <EditIcon />
+                                        : null
+                                        }
+                                        {message.mine && message.read ?
+                                            <DoneAllIcon />
+                                        : null
+                                        }
+                                    </div>
+                            } />
+                            {message.mine ? 
+                                <ListItemSecondaryAction>
+                                    <IconButton edge="end" onClick={()=>EditMessage(message)}>
+                                        <EditIcon />
+                                    </IconButton>
+                                    <IconButton edge="end" onClick={()=>DeleteMessage(message.id)}>
+                                        <DeleteForeverIcon />
+                                    </IconButton>
+                                </ListItemSecondaryAction>
+                            : null}
+                        </ListItem>
                     )
                 }
             })}
+            </List>
         </div>
     )
 })

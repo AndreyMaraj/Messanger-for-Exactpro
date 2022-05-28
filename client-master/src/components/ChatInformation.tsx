@@ -305,7 +305,7 @@ const Chat = observer(({chatInfo, groupUsersStore, profileStore, onlineStatusSto
                                                 dense={true}
                                                 className={classes.root1}
                                             >
-                                                {chatInfo.role !== 'none' ?
+                                                {chatInfo.role !== 'none' || chatInfo.type === "3" ?
                                                     <ListItem>
                                                         <Button 
                                                             onClick={()=>setItem('AddMember')}

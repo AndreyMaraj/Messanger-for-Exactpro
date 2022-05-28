@@ -15,6 +15,8 @@ import { MessagesUpdate } from '../interfaces/MessagesUpdate'
 import { AppBar, Avatar, Button, TextField, Toolbar, Typography, createStyles, makeStyles, Theme, Container, Icon, IconButton } from '@material-ui/core'
 import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos'
 import AttachFileIcon from '@material-ui/icons/AttachFile'
+import SendIcon from '@material-ui/icons/Send';
+import DeleteIcon from '@material-ui/icons/Delete';
 
 var profile: string = ''
 
@@ -74,6 +76,11 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
             },
             messageInput: {
 
+            },
+            files: {
+                height: 100,
+                width: 300,
+                overflow: 'auto'
             }
         })
     )
@@ -337,7 +344,7 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
                                         variant="contained"
                                         component="label"
                                         className={classes.sendMessageButton}
-                                        endIcon={<Icon>send</Icon>}
+                                        endIcon={<SendIcon/>}
                                         onClick={()=>EditMessage()}
                                     >
                                         Send
@@ -347,7 +354,7 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
                                         variant="contained"
                                         component="label"
                                         className={classes.sendMessageButton}
-                                        endIcon={<Icon>send</Icon>}
+                                        endIcon={<SendIcon/>}
                                         onClick={()=>SendMessage()}
                                     >
                                         Send
@@ -355,22 +362,26 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
                                 }
                                 
                             </div>
-                            {files.map((file, index: number)=>{
-                                return(
-                                    <div key={index}>
-                                        {file.bytes?.slice(file.bytes?.indexOf('data') + 5, file.bytes?.indexOf('/')) === 'image' ?
-                                            <img height={50} width={50} src={file.bytes}/>
-                                        : file.bytes?.slice(file.bytes?.indexOf('data') + 5, file.bytes?.indexOf('/')) === 'video' ?
-                                            <video height={50} width={50} autoPlay loop muted controls src={file.bytes}></video>
-                                        : file.bytes?.slice(file.bytes?.indexOf('data') + 5, file.bytes?.indexOf('/')) === 'audio' ?
-                                            <audio controls src={file.bytes} />
-                                        : file.bytes?.indexOf('data') !== -1 ?
-                                            <a href={file.bytes} download={file.name}><button>{file.name}</button></a>
-                                        : null}
-                                        <button onClick={()=>DeleteAttachment(file)}>Delete</button>
-                                    </div>
-                                )
-                            })}
+                            <div className={classes.files}>
+                                {files.map((file, index: number)=>{
+                                    return(
+                                        <div key={index}>
+                                            {file.bytes?.slice(file.bytes?.indexOf('data') + 5, file.bytes?.indexOf('/')) === 'image' ?
+                                                <img height={50} width={50} src={file.bytes}/>
+                                            : file.bytes?.slice(file.bytes?.indexOf('data') + 5, file.bytes?.indexOf('/')) === 'video' ?
+                                                <video height={50} width={50} autoPlay loop muted controls src={file.bytes}></video>
+                                            : file.bytes?.slice(file.bytes?.indexOf('data') + 5, file.bytes?.indexOf('/')) === 'audio' ?
+                                                <audio controls src={file.bytes} />
+                                            : file.bytes?.indexOf('data') !== -1 ?
+                                                <a href={file.bytes} download={file.name}><button>{file.name}</button></a>
+                                            : null}
+                                            <IconButton onClick={()=>DeleteAttachment(file)}>
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </div>
+                                    )
+                                })}
+                            </div>
                         </Container>
                     </div>
                 )
