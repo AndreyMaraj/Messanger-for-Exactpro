@@ -3,16 +3,24 @@ import Cookie from '../Cookie'
 import Requests from '../Requests'
 import MessagesStore from '../stores/MessagesStore'
 import {MessagesUpdate} from "../interfaces/MessagesUpdate"
-import { Avatar, Button, createStyles, IconButton, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, makeStyles, Theme } from '@material-ui/core'
+import { Avatar, Button, createStyles, IconButton, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, makeStyles, Snackbar, Theme } from '@material-ui/core'
 import { ChatsUpdate } from '../interfaces/ChatsUpdate'
 import DoneAllIcon from '@material-ui/icons/DoneAll';
 import EditIcon from '@material-ui/icons/Edit';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import GetAppIcon from '@material-ui/icons/GetApp';
+import React from 'react'
+import { Close } from '@material-ui/icons'
 
 // сообщения чата
 const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore: MessagesStore, chatInfo: ChatsUpdate, EditMessage: (message: MessagesUpdate)=> void})=>{
 
+    const [open, setOpen] = React.useState(false);
+    const [message, setMessage] = React.useState('');
+
+    function handleClose() {
+        setOpen(false);
+    };
     const useStyles = makeStyles((theme: Theme) => // стили
         createStyles({
             messages: {
@@ -54,7 +62,8 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
             case 200:
                 break
             case 400:
-                alert("")
+                setMessage("");
+                setOpen(true);
                 break
             default:
                 break
@@ -72,7 +81,8 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
             case 200:
                 break
             case 400:
-                alert("")
+                setMessage("");
+                setOpen(true);
                 break
             default:
                 break
@@ -99,7 +109,8 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
             case 200:
                 break
             case 400:
-                alert("Данные некорректны!")
+                setMessage("Data is not corrected.");
+                setOpen(true);
                 break
             default:
                 break
@@ -199,6 +210,26 @@ const Messages = observer(({messagesStore, chatInfo, EditMessage}:{messagesStore
                 }
             })}
             </List>
+            <div>
+                <Snackbar
+                    anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right'
+                    }}
+                    
+                    open={open}
+                    autoHideDuration={6000}
+                    onClose={()=>handleClose()}
+                    message={message}
+                    action={
+                    <React.Fragment>
+                        <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </React.Fragment>
+                    }
+                />
+            </div>
         </div>
     )
 })

@@ -7,9 +7,10 @@ import ProfileStore from '../stores/ProfileStore'
 import { ChatsUpdate } from "../interfaces/ChatsUpdate"
 import { UserInfo } from '../interfaces/UserInfo'
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
-import { AppBar, Button, IconButton, InputBase, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Toolbar } from '@material-ui/core'
+import { AppBar, Button, IconButton, InputBase, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Snackbar, Toolbar } from '@material-ui/core'
 import AddIcon  from '@material-ui/icons/Add'
 import SearchIcon from '@material-ui/icons/Search';
+import { Close } from '@material-ui/icons'
 
 var profile: string = ''
 
@@ -18,6 +19,12 @@ const AddMemberToChat = (props: {chatInfo: ChatsUpdate, users: UserInfo[], profi
     
     const [item, setItem] = useState<string>('AddMember') // отображаемый элемент
     const [searchChat, setSearchChat] = useState<string>("")
+    const [open, setOpen] = React.useState(false);
+    const [message, setMessage] = React.useState('');
+
+    function handleClose() {
+        setOpen(false);
+    };
     const useStyles = makeStyles((theme: Theme) => // стили
         createStyles({
             content: {
@@ -161,13 +168,16 @@ const AddMemberToChat = (props: {chatInfo: ChatsUpdate, users: UserInfo[], profi
                 props.Done()
                 break
             case 401:
-                alert("User is not logged in.")
+                setMessage("User is not logged in.");
+                setOpen(true);
                 break
             case 403:
-                alert("User has insufficient rights.")
+                setMessage("User has insufficient rights.");
+                setOpen(true);
                 break
             default:
-                alert("Error.")
+                setMessage("Error.");
+                setOpen(true);
                 break
         }
     }
@@ -180,10 +190,12 @@ const AddMemberToChat = (props: {chatInfo: ChatsUpdate, users: UserInfo[], profi
             case 200:
                 break
             case 401:
-                alert("User is not logged in.")
+                setMessage("User is not logged in.");
+                setOpen(true);
                 break
             default:
-                alert("Error.")
+                setMessage("Error.");
+                setOpen(true);
                 break
         }  
     }
@@ -279,7 +291,29 @@ const AddMemberToChat = (props: {chatInfo: ChatsUpdate, users: UserInfo[], profi
     }
 
     return (
-        SetItem()
+        <div>
+            {SetItem()}
+            <div>
+                <Snackbar
+                    anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right'
+                    }}
+                    
+                    open={open}
+                    autoHideDuration={6000}
+                    onClose={()=>handleClose()}
+                    message={message}
+                    action={
+                    <React.Fragment>
+                        <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </React.Fragment>
+                    }
+                />
+            </div>
+        </div>
     )
 }
 

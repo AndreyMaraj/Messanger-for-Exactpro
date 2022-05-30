@@ -5,8 +5,9 @@ import ChangeProfileInfo from './ChangeProfileInfo'
 import ProfileStore from '../stores/ProfileStore'
 import OnlineStatusStore from '../stores/OnlineStatusStore'
 import UserAvatar from './UserAvatar'
-import { AppBar, Button, Container, createStyles, IconButton, makeStyles, Theme, Toolbar, Typography } from '@material-ui/core'
+import { AppBar, Button, Container, createStyles, IconButton, makeStyles, Snackbar, Theme, Toolbar, Typography } from '@material-ui/core'
 import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos'
+import { Close } from '@material-ui/icons'
 
 // Профиль пользователя
 const Profile = observer(({profileStore, onlineStatusStore, Change, Done}: {profileStore: ProfileStore, onlineStatusStore: OnlineStatusStore, Change: boolean, Done: ()=> void}, ) => {
@@ -14,6 +15,12 @@ const Profile = observer(({profileStore, onlineStatusStore, Change, Done}: {prof
     const [item, setItem] = useState<string>('Profile') // Отображаемый элемент
     const profile = 'Profile' // элемент
     const changeProfileInfo = 'ChangeProfileInfo' // элемент
+    const [open, setOpen] = React.useState(false);
+    const [message, setMessage] = React.useState('');
+
+    function handleClose() {
+        setOpen(false);
+    }; 
     
     const useStyles = makeStyles((theme: Theme) => // стили 
         createStyles({
@@ -67,10 +74,12 @@ const Profile = observer(({profileStore, onlineStatusStore, Change, Done}: {prof
                 Done()
                 break
             case 401:
-                alert("User is not logged in.")
+                setMessage("User is not logged in.");
+                setOpen(true);
                 break
             default:
-                alert("Error.")
+                setMessage("Error.");
+                setOpen(true);
                 break
         }
     }
@@ -158,7 +167,29 @@ const Profile = observer(({profileStore, onlineStatusStore, Change, Done}: {prof
     }
 
     return (
-        SetItem()
+        <div>
+            {SetItem()}
+            <div>
+                <Snackbar
+                    anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right'
+                    }}
+                    
+                    open={open}
+                    autoHideDuration={6000}
+                    onClose={()=>handleClose()}
+                    message={message}
+                    action={
+                    <React.Fragment>
+                        <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </React.Fragment>
+                    }
+                />
+            </div>
+        </div>
     )
 })
 

@@ -9,9 +9,18 @@ import {ChatsUpdate} from '../interfaces/ChatsUpdate'
 import {MessagesUpdate} from '../interfaces/MessagesUpdate'
 import { ChatUser } from "../interfaces/ChatUser"
 import {ProfileInfo} from '../interfaces/ProfileInfo'
+import { IconButton } from '@material-ui/core'
+import { Close } from '@material-ui/icons'
 
 // Обработка подписок Sse
 const UpdateListener = ({chatsStore, messagesStore, groupUsersStore, profileStore, onlineStatusStore}:{chatsStore: ChatsStore, messagesStore: MessagesStore, groupUsersStore: GroupUsersStore, profileStore: ProfileStore, onlineStatusStore: OnlineStatusStore}) =>{
+
+    const [open, setOpen] = React.useState(false);
+    const [message, setMessage] = React.useState('');
+
+    function handleClose() {
+        setOpen(false);
+    }; 
 
     useEffect(()=>{
         
@@ -24,10 +33,12 @@ const UpdateListener = ({chatsStore, messagesStore, groupUsersStore, profileStor
                 case 200:
                     break
                 case 401:
-                    alert("User is not logged in.")
+                    setMessage("User is not logged in.");
+                    setOpen(true);
                     break
                 default:
-                    alert("Error.")
+                    setMessage("Error.");
+                    setOpen(true);
                     break
             }
         }, 15000)
@@ -187,7 +198,11 @@ const UpdateListener = ({chatsStore, messagesStore, groupUsersStore, profileStor
     )
 
     return (
-        <React.Fragment/>
+        <React.Fragment>
+            <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                <Close fontSize="small" />
+            </IconButton>
+        </React.Fragment>
     )
 }
 

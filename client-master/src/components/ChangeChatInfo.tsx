@@ -1,8 +1,10 @@
 import {ChangeEvent, useState} from 'react'
 import Requests from '../Requests'
 import { ChatsUpdate } from "../interfaces/ChatsUpdate"
-import { AppBar, Avatar, Button, Container, createStyles, FormControlLabel, makeStyles, Switch, TextField, Theme, Toolbar, Typography } from '@material-ui/core'
+import { AppBar, Avatar, Button, Container, createStyles, FormControlLabel, IconButton, makeStyles, Snackbar, Switch, TextField, Theme, Toolbar, Typography } from '@material-ui/core'
 import DeleteIcon from '@material-ui/icons/Delete'
+import React from 'react'
+import { Close } from '@material-ui/icons'
 
 // Редактирование информации чата
 const ChangeChatInfo = (props: {chatInfo: ChatsUpdate, Done: ()=> void}) => {
@@ -11,6 +13,12 @@ const ChangeChatInfo = (props: {chatInfo: ChatsUpdate, Done: ()=> void}) => {
     const [newGroupChatBio, setNewGroupChatBio] = useState<string>(props.chatInfo.bio) // био
     const [newGroupChatPicture, setNewGroupChatPicture] = useState<string>(props.chatInfo.picture) // фото
     const [newGroupChatSmartType, setNewGroupChatSmartType] = useState<boolean>(props.chatInfo.type === '2' ? true : false) //тип
+    const [open, setOpen] = React.useState(false);
+    const [message, setMessage] = React.useState('');
+
+    function handleClose() {
+        setOpen(false);
+    };
     const useStyles = makeStyles((theme: Theme) => //стили
         createStyles({
             content: {
@@ -68,7 +76,8 @@ const ChangeChatInfo = (props: {chatInfo: ChatsUpdate, Done: ()=> void}) => {
             }
         })
         reader.onerror = (error) => {
-            alert('Error: ' + error)
+            setMessage('Error: ' + error);
+            setOpen(true);
         }
         reader.readAsDataURL(event.target.files[0])
     }
@@ -88,13 +97,16 @@ const ChangeChatInfo = (props: {chatInfo: ChatsUpdate, Done: ()=> void}) => {
                 props.Done()
                 break
             case 401:
-                alert("User is not logged in.")
+                setMessage("User is not logged in.");
+                setOpen(true);
                 break
             case 403:
-                alert("User has insufficient rights.")
+                setMessage("User has insufficient rights.");
+                setOpen(true);
                 break
             default:
-                alert("Error.")
+                setMessage("Error.");
+                setOpen(true);
                 break
         }
     }
@@ -180,6 +192,26 @@ const ChangeChatInfo = (props: {chatInfo: ChatsUpdate, Done: ()=> void}) => {
                         />
                     : null}
                 </Container>
+                <div>
+                    <Snackbar
+                        anchorOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right'
+                        }}
+                        
+                        open={open}
+                        autoHideDuration={6000}
+                        onClose={()=>handleClose()}
+                        message={message}
+                        action={
+                        <React.Fragment>
+                            <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                                <Close fontSize="small" />
+                            </IconButton>
+                        </React.Fragment>
+                        }
+                    />
+                </div>
             </div>
     )
 }

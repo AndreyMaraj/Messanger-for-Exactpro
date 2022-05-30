@@ -12,11 +12,12 @@ import GroupUsersStore from '../stores/GroupUsersStore'
 import {ChatsUpdate} from '../interfaces/ChatsUpdate'
 import { UserInfo } from '../interfaces/UserInfo'
 import { MessagesUpdate } from '../interfaces/MessagesUpdate'
-import { AppBar, Avatar, IconButton, InputBase, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Toolbar, Typography } from '@material-ui/core'
+import { AppBar, Avatar, IconButton, InputBase, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Snackbar, Toolbar, Typography } from '@material-ui/core'
 import DeleteIcon from '@material-ui/icons/Delete'
 import AddIcon  from '@material-ui/icons/Add'
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import SearchIcon from '@material-ui/icons/Search';
+import { Close } from '@material-ui/icons'
 
 var ChatId: string
 
@@ -28,6 +29,12 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
     const addChat: string = 'AddChat'
     const [item, setItem] = useState<string>(chats) // Отображаемый элемент
     const [searchChat, setSearchChat] = useState<string>("")
+    const [open, setOpen] = React.useState(false);
+    const [message, setMessage] = React.useState('');
+
+    function handleClose() {
+        setOpen(false);
+    };
     const useStyles = makeStyles((theme: Theme) => // стили
         createStyles({
             content: {
@@ -119,10 +126,12 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
                 })
                 return Chat
             case 401:
-                alert("User is not logged in.")
+                setMessage("User is not logged in.");
+                setOpen(true);
                 return Chat
             default:
-                alert("Error.")
+                setMessage("Error.");
+                setOpen(true);
                 return Chat
         }  
     }
@@ -137,10 +146,12 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
             case 200:
                 break
             case 401:
-                alert("User is not logged in.")
+                setMessage("User is not logged in.");
+                setOpen(true);
                 break
             default:
-                alert("Error.")
+                setMessage("Error.");
+                setOpen(true);
                 break
         }
     }
@@ -152,10 +163,12 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
           case 200:
             return JSON.parse(request.responseText) as UserInfo[]
           case 401:
-            alert("User is not logged in.")
+            setMessage("User is not logged in.");
+                setOpen(true);
             return [];
           default:
-            alert("Error.")
+            setMessage("Error.");
+            setOpen(true);
             return []
         }
     }
@@ -289,7 +302,29 @@ const Chats = observer(({chatsStore, messagesStore, groupUsersStore,  profileSto
     }
 
     return (
-        SetItem()
+        <div>
+            {SetItem()}
+            <div>
+                <Snackbar
+                    anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right'
+                    }}
+                    
+                    open={open}
+                    autoHideDuration={6000}
+                    onClose={()=>handleClose()}
+                    message={message}
+                    action={
+                    <React.Fragment>
+                        <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </React.Fragment>
+                    }
+                />
+            </div>
+        </div>
     )
 })
 

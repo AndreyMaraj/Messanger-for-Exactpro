@@ -1,8 +1,9 @@
-import { ChangeEvent, useState } from 'react'
+import React, { ChangeEvent, useState } from 'react'
 import Requests from '../Requests'
 import { ProfileInfo } from "../interfaces/ProfileInfo"
-import { AppBar, Avatar, Button, Container, createStyles, makeStyles, TextField, Theme, Toolbar, Typography } from '@material-ui/core'
+import { AppBar, Avatar, Button, Container, createStyles, IconButton, makeStyles, Snackbar, TextField, Theme, Toolbar, Typography } from '@material-ui/core'
 import DeleteIcon from '@material-ui/icons/Delete'
+import { Close } from '@material-ui/icons'
 
 // Форма редактирования профиля пользователя
 const ChangeProfileInfo = (props: {profileInfo: ProfileInfo, Done: ()=> void}) => {
@@ -10,6 +11,12 @@ const ChangeProfileInfo = (props: {profileInfo: ProfileInfo, Done: ()=> void}) =
     const [newUsername, setNewUsername] = useState<string>(props.profileInfo.name) // имя пользователя
     const [newBio, setNewBio] = useState<string>(props.profileInfo.bio) // био
     const [newPicture, setNewPicture] = useState<string>(props.profileInfo.picture) // фото пользователя
+    const [open, setOpen] = React.useState(false);
+    const [message, setMessage] = React.useState('');
+
+    function handleClose() {
+        setOpen(false);
+    };
 
     const useStyles = makeStyles((theme: Theme) => // стили 
         createStyles({
@@ -69,7 +76,8 @@ const ChangeProfileInfo = (props: {profileInfo: ProfileInfo, Done: ()=> void}) =
             }
         })
         reader.onerror = (error) => { // обрабокта ошибки чтения файла
-            alert('Error: ' + error)
+            setMessage('Error: ' + error);
+            setOpen(true);
         }
         reader.readAsDataURL(event.target.files[0]) // чтение файла
     }
@@ -87,10 +95,12 @@ const ChangeProfileInfo = (props: {profileInfo: ProfileInfo, Done: ()=> void}) =
                 props.Done()
                 break
             case 401:
-                alert("User is not logged in.")
+                setMessage("User is not logged in.");
+                setOpen(true);
                 break
             default:
-                alert("Error.")
+                setMessage("Error.");
+                setOpen(true);
                 break
         }
     }
@@ -170,6 +180,26 @@ const ChangeProfileInfo = (props: {profileInfo: ProfileInfo, Done: ()=> void}) =
                     onChange={event=>setNewBio(event.target.value)}
                 />
             </Container>
+            <div>
+                <Snackbar
+                    anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right'
+                    }}
+                    
+                    open={open}
+                    autoHideDuration={6000}
+                    onClose={()=>handleClose()}
+                    message={message}
+                    action={
+                    <React.Fragment>
+                        <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </React.Fragment>
+                    }
+                />
+            </div>
         </div>
     )
 }

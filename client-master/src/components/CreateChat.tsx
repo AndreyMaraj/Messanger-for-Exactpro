@@ -6,11 +6,12 @@ import UserAvatar from './UserAvatar'
 import OnlineStatusStore from '../stores/OnlineStatusStore'
 import ProfileStore from '../stores/ProfileStore'
 import { UserInfo } from '../interfaces/UserInfo'
-import { AppBar, Avatar, Button, Checkbox, Container, CssBaseline, FormControlLabel, Grid, IconButton, InputBase, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Switch, TextField, Toolbar, Typography } from '@material-ui/core'
+import { AppBar, Avatar, Button, Checkbox, Container, CssBaseline, FormControlLabel, Grid, IconButton, InputBase, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Snackbar, Switch, TextField, Toolbar, Typography } from '@material-ui/core'
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
 import MessageIcon from '@material-ui/icons/Message'
 import DeleteIcon from '@material-ui/icons/Delete'
 import SearchIcon from '@material-ui/icons/Search';
+import { Close } from '@material-ui/icons'
 
 var userProfile: string = ''
 
@@ -30,6 +31,12 @@ const CreateChat = observer(({users, profileStore, onlineStatusStore, Done}: { u
   const [searchChat, setSearchChat] = useState<string>("")
   const smartChat = '2' // умный чат
   const simpleChat = '3' // простой чат
+  const [open, setOpen] = React.useState(false);
+  const [message, setMessage] = React.useState('');
+
+  function handleClose() {
+      setOpen(false);
+  };
 
   const useStyles = makeStyles((theme: Theme) => // стили
     createStyles({
@@ -180,10 +187,12 @@ const CreateChat = observer(({users, profileStore, onlineStatusStore, Done}: { u
       case 200:
         break
       case 401:
-        alert("User is not logged in.")
+        setMessage("User is not logged in.");
+        setOpen(true);
         break
       default:
-        alert("Error.")
+        setMessage("Error.");
+        setOpen(true);
         break
     }     
   }
@@ -198,7 +207,8 @@ const CreateChat = observer(({users, profileStore, onlineStatusStore, Done}: { u
       }
     })
     reader.onerror = (error) => { // событие при ошибке при загрузке файла
-      alert('Error: ' + error)
+      setMessage('Error: ' + error);
+      setOpen(true);
     }
     reader.readAsDataURL(event.target.files[0]) // загрузка файла
   }
@@ -214,13 +224,15 @@ const CreateChat = observer(({users, profileStore, onlineStatusStore, Done}: { u
         Done(JSON.parse(request.responseText).chatId) // открытие диалога
         break
       case 401:
-        alert("User is not logged in.")
+        setMessage("User is not logged in.");
+        setOpen(true);
         break
       case 409:
         Done(JSON.parse(request.responseText).chatId) // открытие диалога, если он уже создан
         break
       default:
-        alert("Error.")
+        setMessage("Error.");
+        setOpen(true);
         break
     }
   }
@@ -247,18 +259,22 @@ const CreateChat = observer(({users, profileStore, onlineStatusStore, Done}: { u
           Done(JSON.parse(request.responseText).chatId) // Открытие чата
           break
         case 401:
-          alert("User is not logged in.")
+          setMessage("User is not logged in.");
+        setOpen(true);
           break
         case 409:
-          alert("Chat creation error.")
+          setMessage('Chat creation error.');
+          setOpen(true);
           break
         default:
-          alert("Error.")
+          setMessage("Error.");
+          setOpen(true);
           break
       }
     }
     else{
-      alert('Name the chat and add users.')
+      setMessage('Name the chat and add users.');
+      setOpen(true);
     }
   }
 
@@ -506,7 +522,29 @@ const CreateChat = observer(({users, profileStore, onlineStatusStore, Done}: { u
   }
   
   return(
-    SetItem()
+    <div>
+      {SetItem()}
+      <div>
+          <Snackbar
+              anchorOrigin={{
+              vertical: 'top',
+              horizontal: 'right'
+              }}
+              
+              open={open}
+              autoHideDuration={6000}
+              onClose={()=>handleClose()}
+              message={message}
+              action={
+              <React.Fragment>
+                  <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                      <Close fontSize="small" />
+                  </IconButton>
+              </React.Fragment>
+              }
+          />
+      </div>
+  </div>
   )
 })
 

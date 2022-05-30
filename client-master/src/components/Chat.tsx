@@ -12,11 +12,12 @@ import OnlineStatusStore from '../stores/OnlineStatusStore'
 import GroupUsersStore from '../stores/GroupUsersStore'
 import { ChatsUpdate } from "../interfaces/ChatsUpdate"
 import { MessagesUpdate } from '../interfaces/MessagesUpdate'
-import { AppBar, Avatar, Button, TextField, Toolbar, Typography, createStyles, makeStyles, Theme, Container, Icon, IconButton } from '@material-ui/core'
+import { AppBar, Avatar, Button, TextField, Toolbar, Typography, createStyles, makeStyles, Theme, Container, Icon, IconButton, Snackbar } from '@material-ui/core'
 import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos'
 import AttachFileIcon from '@material-ui/icons/AttachFile'
 import SendIcon from '@material-ui/icons/Send';
 import DeleteIcon from '@material-ui/icons/Delete';
+import { Close } from '@material-ui/icons'
 
 var profile: string = ''
 
@@ -27,6 +28,12 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
     const [files, setFiles] = useState<{name: string, bytes: string}[]>([]) // файлы
     const [editMessage, setEditMessage] = useState<MessagesUpdate | null>(null) // измененное сообщение 
     const [item, setItem] = useState<string>('Chat') // отображаемый элемент 
+    const [open, setOpen] = React.useState(false);
+    const [errorMessage, setErrorMessage] = React.useState('');
+
+    function handleClose() {
+        setOpen(false);
+    };
     const useStyles = makeStyles((theme: Theme) => // стили
         createStyles({
             content: {
@@ -94,10 +101,12 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
             case 200:
                 break
             case 401:
-                alert("User is not logged in.")
+                setErrorMessage("User is not logged in.");
+                setOpen(true);
                 break
             default:
-                alert("Error.")
+                setErrorMessage("Error.");
+                setOpen(true);
                 break
         }     
     }
@@ -120,7 +129,8 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
             })
         }
         reader.onerror = (error) => {
-            alert('Error: ' + error)
+            setErrorMessage('Error: ' + error);
+            setOpen(true);
         }
         reader.readAsDataURL(event.target.files[0])
     }
@@ -156,13 +166,16 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
                     setEditMessage(null)
                     break
                 case 401:
-                    alert("User is not logged in.")
+                    setErrorMessage("User is not logged in.");
+                    setOpen(true);
                     break
                 case 403:
-                    alert("User has insufficient rights.")
+                    setErrorMessage("User has insufficient rights.");
+                    setOpen(true);
                     break
                 default:
-                    alert("Error.")
+                    setErrorMessage("Error.");
+                    setOpen(true);
                     break
             }
         }
@@ -188,13 +201,16 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
                     setMessage("")
                     break
                 case 401:
-                    alert("User is not logged in.")
+                    setErrorMessage("User is not logged in.");
+                    setOpen(true);
                     break
                 case 403:
-                    alert("User has insufficient rights.")
+                    setErrorMessage("User has insufficient rights.");
+                    setOpen(true);
                     break
                 default:
-                    alert("Error.")
+                    setErrorMessage("Error.");
+                    setOpen(true);
                     break
             }
         }
@@ -209,10 +225,12 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
             case 200:
                 break
             case 401:
-                alert("User is not logged in.")
+                setErrorMessage("User is not logged in.");
+                setOpen(true);
                 break
             default:
-                alert("Error.")
+                setErrorMessage("Error.");
+                setOpen(true);
                 break
         }
         return request.responseText
@@ -413,7 +431,29 @@ const Chat = observer(({messagesStore, chatInfo, groupUsersStore, profileStore, 
     }
 
     return (
-        SetItem()
+        <div>
+            {SetItem()}
+            <div>
+                <Snackbar
+                    anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right'
+                    }}
+                    
+                    open={open}
+                    autoHideDuration={6000}
+                    onClose={()=>handleClose()}
+                    message={errorMessage}
+                    action={
+                    <React.Fragment>
+                        <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </React.Fragment>
+                    }
+                />
+            </div>
+        </div>
     )
 })
 

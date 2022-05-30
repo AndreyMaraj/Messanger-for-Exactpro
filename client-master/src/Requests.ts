@@ -17,7 +17,7 @@ export default class Requests{
             return cookieKeySession
         }
         else{
-            alert('Session key error.')
+            // alert('Session key error.')
             return null
         }
     }

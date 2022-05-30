@@ -2,8 +2,10 @@ import {useState} from 'react'
 import Requests from '../Requests'
 import Cookie from '../Cookie'
 import { makeStyles } from '@material-ui/core/styles'
-import { Avatar, Button, Container, TextField, Typography } from '@material-ui/core'
+import { Avatar, Button, Container, IconButton, Snackbar, TextField, Typography } from '@material-ui/core'
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined'
+import React from 'react'
+import { Close } from '@material-ui/icons'
 
 // Форма авторизации (вход/регистрация)
 const Authorization = (props: { LogIn: () => void }) => {
@@ -11,6 +13,12 @@ const Authorization = (props: { LogIn: () => void }) => {
   const [username, setUsername] = useState<string>("") // Введеный ник
   const [password, setPassword] = useState<string>("") // Введенный пароль
   const crypt = require('crypto') // Функция хэширования пароля
+  const [open, setOpen] = React.useState(false);
+  const [message, setMessage] = React.useState('');
+
+  function handleClose() {
+    setOpen(false);
+  };
   // Стили для формы
   const useStyles: any = makeStyles((theme) => ({ 
     paper: {
@@ -37,7 +45,8 @@ const Authorization = (props: { LogIn: () => void }) => {
   // Валидация формы
   function FormSubmit(): boolean {
     if(username === "" || password === "") {
-      alert("Not all fields of the form are filled in.");
+      setMessage("Not all fields of the form are filled in.");
+      setOpen(true);
       return false;
     }
     return true;
@@ -53,10 +62,12 @@ const Authorization = (props: { LogIn: () => void }) => {
       case 200:
         break
       case 401:
-        alert("User is not logged in.")
+        setMessage("User is not logged in.");
+        setOpen(true);
         break
       default:
-        alert("Error.")
+        setMessage("Error.");
+        setOpen(true);
         break
     }
   }
@@ -72,10 +83,12 @@ const Authorization = (props: { LogIn: () => void }) => {
           IsAuthorized()
           break
         case 401:
-          alert("User is not logged in.")
+          setMessage("User is not logged in.");
+          setOpen(true);
           break
         default:
-          alert("Error.")
+          setMessage("Error.");
+          setOpen(true);
           break
       }
     }
@@ -95,10 +108,12 @@ const Authorization = (props: { LogIn: () => void }) => {
           IsAuthorized() // Успешная авторизация
           break
         case 406:
-          alert("Username is taken.")
+          setMessage("Username is taken.");
+          setOpen(true);
           break
         default:
-          alert("Error.")
+          setMessage("Error.");
+          setOpen(true);
           break
       }
     }
@@ -171,6 +186,26 @@ const Authorization = (props: { LogIn: () => void }) => {
               Sign In
             </Button>
           </form>
+        </div>
+        <div>
+          <Snackbar
+            anchorOrigin={{
+              vertical: 'top',
+              horizontal: 'right'
+            }}
+            
+            open={open}
+            autoHideDuration={6000}
+            onClose={()=>handleClose()}
+            message={message}
+            action={
+              <React.Fragment>
+                <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                  <Close fontSize="small" />
+                </IconButton>
+              </React.Fragment>
+            }
+          />
         </div>
       </Container>
     )

@@ -8,13 +8,20 @@ import MessagesStore from '../stores/MessagesStore'
 import ProfileStore from '../stores/ProfileStore'
 import OnlineStatusStore from '../stores/OnlineStatusStore'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
-import { BottomNavigation, BottomNavigationAction, Container } from '@material-ui/core'
+import { BottomNavigation, BottomNavigationAction, Container, IconButton, Snackbar } from '@material-ui/core'
 import AccountCircleIcon from '@material-ui/icons/AccountCircle'
 import ChatBubbleOutlineIcon from '@material-ui/icons/ChatBubbleOutline'
+import { Close } from '@material-ui/icons'
 
 const Messenger = (props: {chatsStore: ChatsStore, messagesStore: MessagesStore, groupUsersStore: GroupUsersStore, profileStore: ProfileStore, onlineStatusStore: OnlineStatusStore, Disconnect: ()=> void}) => {
 
-    const [item, setItem] = useState<string>('Chats') // Отображаемый элемент 
+    const [item, setItem] = useState<string>('Chats') // Отображаемый элемент
+    const [open, setOpen] = React.useState(false);
+    const [message, setMessage] = React.useState('');
+
+    function handleClose() {
+        setOpen(false);
+    }; 
 
     // Стили 
     const useStyles: any = makeStyles((theme: Theme) =>
@@ -41,10 +48,12 @@ const Messenger = (props: {chatsStore: ChatsStore, messagesStore: MessagesStore,
             case 200:
                 break
             case 401:
-                alert("User is not logged in.")
+                setMessage("User is not logged in.");
+                setOpen(true);
                 break
             default:
-                alert("Error.")
+                setMessage("Error.");
+                setOpen(true);
                 break
         }
     }
@@ -101,6 +110,26 @@ const Messenger = (props: {chatsStore: ChatsStore, messagesStore: MessagesStore,
                         icon={<ChatBubbleOutlineIcon />} 
                     />
                 </BottomNavigation>
+                <div>
+                    <Snackbar
+                        anchorOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right'
+                        }}
+                        
+                        open={open}
+                        autoHideDuration={6000}
+                        onClose={()=>handleClose()}
+                        message={message}
+                        action={
+                        <React.Fragment>
+                            <IconButton size="small" aria-label="close" color="inherit" onClick={()=>handleClose()}>
+                                <Close fontSize="small" />
+                            </IconButton>
+                        </React.Fragment>
+                        }
+                    />
+                </div>
             </Container>
     )
 }
